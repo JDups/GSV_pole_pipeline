@@ -1,8 +1,0 @@
-README.md
-pyproject.toml
-src/GSV_pole_pipeline/__inti__.py
-src/GSV_pole_pipeline/testing_file.py
-src/GSV_pole_pipeline.egg-info/PKG-INFO
-src/GSV_pole_pipeline.egg-info/SOURCES.txt
-src/GSV_pole_pipeline.egg-info/dependency_links.txt
-src/GSV_pole_pipeline.egg-info/top_level.txt
