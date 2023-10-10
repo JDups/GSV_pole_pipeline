@@ -1,13 +1,23 @@
+from utils import get_pole_id_from_filename
+from glob import glob
+
 class img_fetch:
 
     def __init__(self, directory=None):
         self.directory = directory
         
         if self.directory:
-            pole_pics = glob(directory + "*.png")
+            fl_tp = ["*.png", "*.jpg"]
+            pole_pics = []
+            for fl in fl_tp:
+                pole_pics.extend(glob(directory + fl))
+
             self.pole_pics_df = pd.DataFrame({'pole_fp': pole_pics})
+
             # print(self.pole_pics_df['pole_fp'].str.split("\\").str[-1])
-            self.pole_pics_df['pole_id'] = self.pole_pics_df['pole_fp'].str.split("/").str[-1].str.split("_").str[1].astype(int)
+
+            # self.pole_pics_df['pole_id'] = self.pole_pics_df['pole_fp'].str.split("/").str[-1].str.split("_").str[1].astype(int)
+            self.pole_pics_df['pole_id'] = get_pole_id_from_filename(self.pole_pics_df['pole_fp'].str)
 
     def get_batch(self, id):
         imgs_fp = [row for row in self.pole_pics_df[self.pole_pics_df["pole_id"]==id]["pole_fp"]]
