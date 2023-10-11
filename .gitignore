@@ -1,0 +1,6 @@
+test.py
+test_pics/
+
+# Not sure what added this to the directory.
+# Probably imports
+__pycache__/
