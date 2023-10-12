@@ -4,7 +4,7 @@ import pandas as pd
 import cv2
 
 
-class img_fetch:
+class ImgFetch:
     __supported_image_formats = ["png", "jpg"]
 
     def __init__(self, directory=None):
