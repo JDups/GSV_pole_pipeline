@@ -31,11 +31,15 @@ class ImgFetch:
 
     def get_batch(self, idn):
         idn = str(idn)
-        imgs_fp = self.pole_pics_df[self.pole_pics_df["pole_id"] == idn][
-            "img_fp"
-        ].tolist()
-        imgs = [cv2.imread(fp) for fp in imgs_fp]
-        imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in imgs]
+        # imgs_fp = self.pole_pics_df[self.pole_pics_df["pole_id"] == idn][
+        #     "img_fp"
+        # ].tolist()
+        # imgs = [cv2.imread(fp) for fp in imgs_fp]
+        # imgs = [cv2.cvtColor(img, cv2.COLOR_BGR2RGB) for img in imgs]
+        imgs = [
+            cv2.cvtColor(cv2.imread(fp), cv2.COLOR_BGR2RGB)
+            for fp in self.pole_pics_df[self.pole_pics_df["pole_id"] == idn]["img_fp"]
+        ]
         return [
             {"img": img, "fn": fn} for img, fn in zip(imgs, self.pole_pics_df["img_fn"])
         ]
