@@ -19,24 +19,24 @@ class ImgFetch:
             self.dir_div = "\\"
         fl_tp = [f"*.{f}" for f in ImgFetch.__supported_image_formats]
 
-        pole_pics = []
+        pole_imgs = []
         for fl in fl_tp:
-            pole_pics.extend(glob(directory + fl))
+            pole_imgs.extend(glob(directory + fl))
 
-        self.pole_pics_df = pd.DataFrame({"img_fp": pole_pics})
-        self.pole_pics_df["img_fn"] = (
-            self.pole_pics_df["img_fp"].str.split(self.dir_div).str[-1]
+        self.pole_imgs_df = pd.DataFrame({"img_fp": pole_imgs})
+        self.pole_imgs_df["img_fn"] = (
+            self.pole_imgs_df["img_fp"].str.split(self.dir_div).str[-1]
         )
-        self.pole_pics_df["pole_id"] = self.pole_pics_df["img_fn"].str.split("_").str[1]
+        self.pole_imgs_df["pole_id"] = self.pole_imgs_df["img_fn"].str.split("_").str[1]
 
     def get_batch(self, idn):
         idn = str(idn)
 
         imgs = [
             cv2.cvtColor(cv2.imread(fp), cv2.COLOR_BGR2RGB)
-            for fp in self.pole_pics_df[self.pole_pics_df["pole_id"] == idn]["img_fp"]
+            for fp in self.pole_imgs_df[self.pole_imgs_df["pole_id"] == idn]["img_fp"]
         ]
 
         return [
-            {"img": img, "fn": fn} for img, fn in zip(imgs, self.pole_pics_df["img_fn"])
+            {"img": img, "fn": fn} for img, fn in zip(imgs, self.pole_imgs_df["img_fn"])
         ]
