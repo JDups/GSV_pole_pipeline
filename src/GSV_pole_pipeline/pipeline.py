@@ -1,2 +1,2 @@
-class Pipeline():
-	pass
+class Pipeline:
+    pass
