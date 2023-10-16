@@ -1,4 +1,4 @@
-from utils import get_pole_id_from_filename
+# from utils import get_pole_id_from_filename
 from glob import glob
 import pandas as pd
 import cv2
