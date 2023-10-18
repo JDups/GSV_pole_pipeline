@@ -1,6 +1,7 @@
 class Pipeline:
-    def __init__(self, loader=None):
+    def __init__(self, loader=None, predictors=[]):
         self.loader = loader
+
 
 """
     General idea will be
