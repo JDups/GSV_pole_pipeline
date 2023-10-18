@@ -1,7 +1,14 @@
 import numpy as np
+from abc import ABC, abstractmethod
 
 
-class MarginPredictor:
+class Predictor(ABC):
+    @abstractmethod
+    def predict(self, images):
+        pass
+
+
+class MarginPredictor(Predictor):
     def __init__(self, margin):
         if isinstance(margin, int) or isinstance(margin, float):
             self.mrgs = (margin,) * 4
@@ -36,6 +43,13 @@ class MarginPredictor:
         marg_msk[mrg_yx[0] : dims[0] - mrg_yx[1], mrg_yx[2] : dims[1] - mrg_yx[3]] = 0
 
         return marg_msk
+
+    def predict(self, images):
+        # Will be used in the pipeline.
+        # It will take a dict of images and some info like filename.
+        # Will return dict of predictions for filenames.
+        # Will call get_mask for each individual image.
+        pass
 
 
 class MockPredictor:
