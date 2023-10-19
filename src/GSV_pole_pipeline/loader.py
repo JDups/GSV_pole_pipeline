@@ -38,5 +38,8 @@ class ImgFetch:
         ]
 
         return [
-            {"img": img, "fn": fn} for img, fn in zip(imgs, self.pole_imgs_df["img_fn"])
+            {"img": img, "fn": fn}
+            for img, fn in zip(
+                imgs, self.pole_imgs_df[self.pole_imgs_df["pole_id"] == idn]["img_fn"]
+            )
         ]
