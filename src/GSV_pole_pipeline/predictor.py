@@ -49,7 +49,7 @@ class MarginPredictor(Predictor):
         return [
             {
                 "fn": img["fn"],
-                "result": {
+                "out": {
                     "class": ["margin"],
                     "mask": [self.get_mask(img["img"].shape[:2])],
                 },
