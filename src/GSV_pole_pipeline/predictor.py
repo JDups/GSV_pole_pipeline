@@ -47,7 +47,13 @@ class MarginPredictor(Predictor):
 
     def predict(self, images):
         return [
-            {"fn": img["fn"], "result": self.get_mask(img["img"].shape[:2])}
+            {
+                "fn": img["fn"],
+                "result": {
+                    "class": ["margin"],
+                    "mask": [self.get_mask(img["img"].shape[:2])],
+                },
+            }
             for img in images
         ]
 
