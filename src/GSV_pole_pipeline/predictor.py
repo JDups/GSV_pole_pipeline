@@ -46,11 +46,10 @@ class MarginPredictor(Predictor):
         return marg_msk
 
     def predict(self, images):
-        # Will be used in the pipeline.
-        # It will take a dict of images and some info like filename.
-        # Will return dict of predictions for filenames.
-        # Will call get_mask for each individual image.
-        pass
+        return [
+            {"fn": img["fn"], "result": self.get_mask(img["img"].shape[:2])}
+            for img in images
+        ]
 
 
 class MockPredictor(Predictor):
