@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from abc import ABC, abstractmethod
 
 
@@ -52,5 +53,19 @@ class MarginPredictor(Predictor):
         pass
 
 
-class MockPredictor:
-    pass
+class MockPredictor(Predictor):
+    def __init__(self, results):
+        self.rslt_df = pd.DataFrame(results)
+
+    def predict(self, images):
+        fns = [img["fn"] for img in images]
+
+        return self.rslt_df[self.rslt_df["fn"].isin(fns)].to_dict(orient="records")
+
+
+class CombinedPredictor(Predictor):
+    def __init__(self, results):
+        pass
+
+    def predict(self, images):
+        pass
