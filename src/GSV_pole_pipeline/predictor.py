@@ -62,10 +62,31 @@ class MockPredictor(Predictor):
     def __init__(self, results):
         self.rslt_df = pd.DataFrame(results)
 
+    def __get_mask_list(self, result):
+        if result.masks:
+            return list(result.masks.data.cpu().numpy().astype(bool))
+        else:
+            return []
+
     def predict(self, images):
         fns = [img["fn"] for img in images]
 
-        return self.rslt_df[self.rslt_df["fn"].isin(fns)].to_dict(orient="records")
+        return [
+            {
+                "fn": img["fn"],
+                "out": {
+                    "class": [
+                        img["result"].names[c.item()]
+                        for c in img["result"].boxes.cls.cpu()
+                    ],
+                    "mask": self.__get_mask_list(img["result"]),
+                },
+                "full": img["result"],
+            }
+            for img in self.rslt_df[self.rslt_df["fn"].isin(fns)].to_dict(
+                orient="records"
+            )
+        ]
 
 
 class CombinedPredictor(Predictor):
