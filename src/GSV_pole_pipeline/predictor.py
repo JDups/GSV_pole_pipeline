@@ -99,22 +99,6 @@ class MockPredictor(Predictor):
             ]
         ]
 
-    def predict2(self, images):
-        return [
-            self.output_dict(
-                fn=img["fn"],
-                clss=[
-                    img["result"].names[c.item()] for c in img["result"].boxes.cls.cpu()
-                ],
-                mask=self.__get_mask_list(img["result"]),
-                img=img["result"].orig_img,
-                full=img["result"],
-            )
-            for img in self.rslt_df[
-                self.rslt_df["fn"].isin([i["fn"] for i in images])
-            ].to_dict(orient="records")
-        ]
-
 
 class CombinedPredictor(Predictor):
     def __init__(self, predictors):
