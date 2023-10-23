@@ -4,9 +4,23 @@ from abc import ABC, abstractmethod
 
 
 class Predictor(ABC):
+    def __init__(self):
+        pass
+
     @abstractmethod
     def predict(self, images):
         pass
+
+    def output_dict(self, fn, clss, mask, img, full):
+        return {
+            "fn": fn,
+            "out": {
+                "class": clss,
+                "mask": mask,
+            },
+            "orig_img": img,
+            "full": full,
+        }
 
 
 class MarginPredictor(Predictor):
@@ -43,17 +57,17 @@ class MarginPredictor(Predictor):
 
         marg_msk[mrg_yx[0] : dims[0] - mrg_yx[1], mrg_yx[2] : dims[1] - mrg_yx[3]] = 0
 
-        return marg_msk
+        return marg_msk.astype(bool)
 
     def predict(self, images):
         return [
-            {
-                "fn": img["fn"],
-                "out": {
-                    "class": ["margin"],
-                    "mask": [self.get_mask(img["img"].shape[:2])],
-                },
-            }
+            self.output_dict(
+                fn=img["fn"],
+                clss=["margin"],
+                mask=[self.get_mask(img["img"].shape[:2])],
+                img=img["img"],
+                full=None,
+            )
             for img in images
         ]
 
@@ -69,29 +83,27 @@ class MockPredictor(Predictor):
             return []
 
     def predict(self, images):
-        fns = [img["fn"] for img in images]
-
+        print(self.rslt_df[self.rslt_df["fn"].isin([i["fn"] for i in images])])
         return [
-            {
-                "fn": img["fn"],
-                "out": {
-                    "class": [
-                        img["result"].names[c.item()]
-                        for c in img["result"].boxes.cls.cpu()
-                    ],
-                    "mask": self.__get_mask_list(img["result"]),
-                },
-                "full": img["result"],
-            }
-            for img in self.rslt_df[self.rslt_df["fn"].isin(fns)].to_dict(
-                orient="records"
+            self.output_dict(
+                fn=img["fn"],
+                clss=[
+                    img["result"].names[c.item()] for c in img["result"].boxes.cls.cpu()
+                ],
+                mask=self.__get_mask_list(img["result"]),
+                img=img["result"].orig_img,
+                full=img["result"],
             )
+            for img in self.rslt_df[
+                self.rslt_df["fn"].isin([i["fn"] for i in images])
+            ].to_dict(orient="records")
         ]
 
 
 class CombinedPredictor(Predictor):
-    def __init__(self, results):
-        pass
+    def __init__(self, predictors):
+        self.predictors = predictors
 
     def predict(self, images):
-        pass
+        for name, predictor in self.predictors:
+            print(name)
