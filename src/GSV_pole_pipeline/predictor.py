@@ -11,7 +11,7 @@ class Predictor(ABC):
     def predict(self, images):
         pass
 
-    def output_dict(self, fn, clss, mask, img, full):
+    def output_dict(self, fn=None, clss=None, mask=None, img=None, full=None):
         return {
             "fn": fn,
             "out": {
@@ -66,7 +66,6 @@ class MarginPredictor(Predictor):
                 clss=["margin"],
                 mask=[self.get_mask(img["img"].shape[:2])],
                 img=img["img"],
-                full=None,
             )
             for img in images
         ]
@@ -83,7 +82,24 @@ class MockPredictor(Predictor):
             return []
 
     def predict(self, images):
-        print(self.rslt_df[self.rslt_df["fn"].isin([i["fn"] for i in images])])
+        return [
+            self.output_dict(
+                fn=img["fn"],
+                clss=[
+                    img["result"].names[c.item()] for c in img["result"].boxes.cls.cpu()
+                ],
+                mask=self.__get_mask_list(img["result"]),
+                img=img["result"].orig_img,
+                full=img["result"],
+            )
+            for img in [
+                # [0] is because it returns a 1 element list
+                self.rslt_df[self.rslt_df["fn"] == f].to_dict(orient="records")[0]
+                for f in [i["fn"] for i in images]
+            ]
+        ]
+
+    def predict2(self, images):
         return [
             self.output_dict(
                 fn=img["fn"],
@@ -105,5 +121,47 @@ class CombinedPredictor(Predictor):
         self.predictors = predictors
 
     def predict(self, images):
+        output_list = []
+        # out_l = [self.output_dict(fn=fn) for fn in [i["fn"] for i in images]]
+        # print(out_l)
+        # for fn in [i["fn"] for i in images]:
+        #     print(self.output_dict(fn=fn))
+
         for name, predictor in self.predictors:
+            print([n["fn"] for n in images])
             print(name)
+            preds = predictor.predict(images)
+            print([n["fn"] for n in preds])
+
+            if not output_list:
+                output_list = [
+                    self.output_dict(
+                        fn=p["fn"],
+                        clss=[name + "_" + cn for cn in p["out"]["class"]],
+                        mask=p["out"]["mask"],
+                        img=p["orig_img"],
+                        full=p["full"],
+                    )
+                    for p in preds
+                ]
+            else:
+                for i, p in enumerate(preds):
+                    print(p["fn"])
+                    print(output_list[i]["fn"])
+
+                # output_list = [
+                #     self.output_dict(
+                #         fn=p["fn"],
+                #         # clss=p["out"]["class"],
+                #         clss=[name + "_" + cn for cn in p["out"]["class"]],
+                #         mask=p["out"]["mask"],
+                #         img=p["orig_img"],
+                #         full=p["full"],
+                #     )
+                #     for p in output_list
+                # ]
+
+            # for m in preds:
+            #     print(m['fn'])
+
+        return output_list
