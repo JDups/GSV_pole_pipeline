@@ -102,50 +102,50 @@ class MockPredictor(Predictor):
 
 class CombinedPredictor(Predictor):
     def __init__(self, predictors):
+        # predictors is a list of tuples of the format [("name", Predictor Object),]
         self.predictors = predictors
+
+    def add_prefix(self, prefix, class_name):
+        return prefix + "__" + class_name
 
     def predict(self, images):
         output_list = []
-        # out_l = [self.output_dict(fn=fn) for fn in [i["fn"] for i in images]]
-        # print(out_l)
-        # for fn in [i["fn"] for i in images]:
-        #     print(self.output_dict(fn=fn))
 
         for name, predictor in self.predictors:
-            print([n["fn"] for n in images])
             print(name)
             preds = predictor.predict(images)
-            print([n["fn"] for n in preds])
 
             if not output_list:
                 output_list = [
                     self.output_dict(
                         fn=p["fn"],
-                        clss=[name + "_" + cn for cn in p["out"]["class"]],
+                        clss=[self.add_prefix(name, cn) for cn in p["out"]["class"]],
                         mask=p["out"]["mask"],
                         img=p["orig_img"],
-                        full=p["full"],
+                        full=[{name: p["full"]}],
                     )
                     for p in preds
                 ]
-            else:
-                for i, p in enumerate(preds):
-                    print(p["fn"])
-                    print(output_list[i]["fn"])
+                continue
 
-                # output_list = [
-                #     self.output_dict(
-                #         fn=p["fn"],
-                #         # clss=p["out"]["class"],
-                #         clss=[name + "_" + cn for cn in p["out"]["class"]],
-                #         mask=p["out"]["mask"],
-                #         img=p["orig_img"],
-                #         full=p["full"],
-                #     )
-                #     for p in output_list
-                # ]
+            for i, p in enumerate(preds):
+                # ol_idx is to get the correct index for the same filename.
+                # To ensure that even if two predictors don't return predictions in
+                # the same order that they get matched up correctly.
+                # There is very possibly a more elegant solution.
+                ol_idx = [
+                    x
+                    for x in range(len(output_list))
+                    if output_list[x]["fn"] == p["fn"]
+                ][0]
 
-            # for m in preds:
-            #     print(m['fn'])
+                output_list[ol_idx] = self.output_dict(
+                    fn=p["fn"],
+                    clss=output_list[ol_idx]["out"]["class"]
+                    + [self.add_prefix(name, cn) for cn in p["out"]["class"]],
+                    mask=output_list[ol_idx]["out"]["mask"] + p["out"]["mask"],
+                    img=p["orig_img"],
+                    full=output_list[ol_idx]["full"] + [{name: p["full"]}],
+                )
 
         return output_list
