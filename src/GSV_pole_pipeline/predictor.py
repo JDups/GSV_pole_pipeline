@@ -114,7 +114,6 @@ class CombinedPredictor(Predictor):
         output_list = []
 
         for name, predictor in self.predictors:
-            print(name)
             preds = predictor.predict(images)
 
             if not output_list:
