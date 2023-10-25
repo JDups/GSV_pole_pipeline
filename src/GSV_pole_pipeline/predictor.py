@@ -12,6 +12,8 @@ class Predictor(ABC):
         pass
 
     def output_dict(self, fn=None, clss=None, mask=None, img=None, full=None):
+        # TODO: Decide whether out should be a dict of lists or list of dicts
+        #       Was done teh current way because that's how the Yolo Result object has it.
         return {
             "fn": fn,
             "out": {
