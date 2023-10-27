@@ -6,7 +6,7 @@ def get_pole_id_from_filename(filename_series):
     return filename_series.str.split("_").str[1]
 
 
-def show_mask(image, p_msk=None, n_msk=None):
+def show_mask(image, p_msk=None, n_msk=None, show=True):
     p_clr = np.array([0.90, 0.05, 0.05, 0.75])
     n_clr = np.array([0.05, 0.50, 0.50, 0.75])
 
@@ -24,9 +24,12 @@ def show_mask(image, p_msk=None, n_msk=None):
             overlay = get_overlay(msk, n_clr)
             image = cv2.addWeighted(image, 1, overlay, 0.55, 0)
 
-    cv2.imshow("img", cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    if show:
+        cv2.imshow("img", cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    return image
 
 
 def get_overlay(msk, color):
