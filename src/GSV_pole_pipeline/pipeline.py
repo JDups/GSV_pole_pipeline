@@ -32,7 +32,7 @@ class Pipeline:
         self.rls = rules
 
 
-    def run(self, iterations=None, save_loc=None):
+    def run(self, save_loc=None, iterations=None):
         counter = 0
         if save_loc:
             os.makedirs(save_loc, exist_ok=True)

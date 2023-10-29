@@ -84,6 +84,7 @@ class MockPredictor(Predictor):
             return []
 
     def predict(self, images):
+        print(images[0])
         return [
             self.output_dict(
                 fn=img["fn"],
