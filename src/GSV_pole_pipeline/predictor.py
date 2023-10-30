@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from abc import ABC, abstractmethod
+from ultralytics import YOLO
 
 
 class Predictor(ABC):
@@ -84,7 +85,6 @@ class MockPredictor(Predictor):
             return []
 
     def predict(self, images):
-        print(images[0])
         return [
             self.output_dict(
                 fn=img["fn"],
@@ -99,6 +99,36 @@ class MockPredictor(Predictor):
                 # [0] is because it returns a 1 element list
                 self.rslt_df[self.rslt_df["fn"] == f].to_dict(orient="records")[0]
                 for f in [i["fn"] for i in images]
+            ]
+        ]
+
+
+class YOLOPredictor(Predictor):
+    def __init__(self, weights_fp):
+        self.model = YOLO(weights_fp)
+
+    def __get_mask_list(self, result):
+        if result.masks:
+            return list(result.masks.data.cpu().numpy().astype(bool))
+        else:
+            return []
+
+    def predict(self, images):
+        # preds = [{"fn":img['fn'], "result": self.model.predict(img['img'])[0]} for img in images]
+
+        return [
+            self.output_dict(
+                fn=img["fn"],
+                clss=[
+                    img["result"].names[c.item()] for c in img["result"].boxes.cls.cpu()
+                ],
+                mask=self.__get_mask_list(img["result"]),
+                img=img["result"].orig_img,
+                full=img["result"],
+            )
+            for img in [
+                {"fn": i["fn"], "result": self.model.predict(i["img"])[0]}
+                for i in images
             ]
         ]
 

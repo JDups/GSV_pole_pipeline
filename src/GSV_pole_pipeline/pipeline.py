@@ -31,7 +31,6 @@ class Pipeline:
         self.pder = predictor
         self.rls = rules
 
-
     def run(self, save_loc=None, iterations=None):
         counter = 0
         if save_loc:
@@ -57,13 +56,34 @@ class Pipeline:
 
             for p in preds:
                 if save_loc:
-                    cv2.imwrite(save_loc+"p"+p["fn"].split("_")[1]+"_s1__h"+p["fn"].split("_")[3]+".png", cv2.cvtColor(p["orig_img"], cv2.COLOR_BGR2RGB))
+                    cv2.imwrite(
+                        save_loc
+                        + "p"
+                        + p["fn"].split("_")[1]
+                        + "_s1__h"
+                        + p["fn"].split("_")[3]
+                        + ".png",
+                        cv2.cvtColor(p["orig_img"], cv2.COLOR_BGR2RGB),
+                    )
                 occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
                 mcntr = 0
                 for clss, m in zip(p["out"]["class"], p["out"]["mask"]):
                     if save_loc:
-                        cv2.imwrite(save_loc+"p"+p["fn"].split("_")[1]+"_s2_h"+p["fn"].split("_")[3]+f"_{mcntr}_"+clss+".png", cv2.cvtColor(show_mask(p["orig_img"], p_msk=m, show=False), cv2.COLOR_BGR2RGB))
+                        cv2.imwrite(
+                            save_loc
+                            + "p"
+                            + p["fn"].split("_")[1]
+                            + "_s2_h"
+                            + p["fn"].split("_")[3]
+                            + f"_{mcntr}_"
+                            + clss
+                            + ".png",
+                            cv2.cvtColor(
+                                show_mask(p["orig_img"], p_msk=m, show=False),
+                                cv2.COLOR_BGR2RGB,
+                            ),
+                        )
                         mcntr += 1
 
                     if clss in self.rls["occluding"]:
@@ -86,15 +106,41 @@ class Pipeline:
 
                 if save_loc:
                     if not p["out"]["mask"]:
-                        cv2.imwrite(save_loc+"p"+p["fn"].split("_")[1]+"_s2_h"+p["fn"].split("_")[3]+"_no_masks.png", cv2.cvtColor(p["orig_img"], cv2.COLOR_BGR2RGB))
+                        cv2.imwrite(
+                            save_loc
+                            + "p"
+                            + p["fn"].split("_")[1]
+                            + "_s2_h"
+                            + p["fn"].split("_")[3]
+                            + "_no_masks.png",
+                            cv2.cvtColor(p["orig_img"], cv2.COLOR_BGR2RGB),
+                        )
 
             if largest["fn"] is None:
                 print("No pole found at location")
             else:
-                cv2.imwrite(save_loc+"p"+largest["fn"].split("_")[1]+"_s3_h"+largest["fn"].split("_")[3]+".png", cv2.cvtColor(show_mask(largest["orig_img"], p_msk=largest["interest"], n_msk=largest["occluding"], show=False), cv2.COLOR_BGR2RGB))
+                cv2.imwrite(
+                    save_loc
+                    + "p"
+                    + largest["fn"].split("_")[1]
+                    + "_s3_h"
+                    + largest["fn"].split("_")[3]
+                    + ".png",
+                    cv2.cvtColor(
+                        show_mask(
+                            largest["orig_img"],
+                            p_msk=largest["interest"],
+                            n_msk=largest["occluding"],
+                            show=False,
+                        ),
+                        cv2.COLOR_BGR2RGB,
+                    ),
+                )
 
                 print(f"File: {largest['fn']}")
-                overlap = np.logical_and(largest["interest"], largest["occluding"]).sum()
+                overlap = np.logical_and(
+                    largest["interest"], largest["occluding"]
+                ).sum()
                 print(overlap)
                 if overlap:
                     column_sum = largest["interest"].sum(axis=0)
@@ -103,7 +149,7 @@ class Pipeline:
                     print(colums_hit)
                     left_edge = np.min(colums_hit)
                     right_edge = np.max(colums_hit)
-                    mid_point = (right_edge+left_edge)/2
+                    mid_point = (right_edge + left_edge) / 2
                     print(mid_point)
                     # show_mask(
                     #     largest["orig_img"],
@@ -112,38 +158,48 @@ class Pipeline:
                     # )
                     # https://stackoverflow.com/questions/28417604/plotting-a-line-from-a-coordinate-with-and-angle
                     fig, ax = plt.subplots()
-                    heading = int(largest['fn'].split("_")[3])
-                    ax.set_xlim(-10,10)
-                    ax.set_ylim(-10,10)
-                    print(left_edge/640*90)
-                    print(right_edge/640*90)
+                    heading = int(largest["fn"].split("_")[3])
+                    ax.set_xlim(-10, 10)
+                    ax.set_ylim(-10, 10)
+                    print(left_edge / 640 * 90)
+                    print(right_edge / 640 * 90)
 
-                    ax.plot(0,0, 'ro', markersize=20, fillstyle='none')
+                    ax.plot(0, 0, "ro", markersize=20, fillstyle="none")
 
                     for angle in [
-                        heading-45,
-                        heading+45,
-                        heading+45-left_edge/640*90, 
-                        heading+45-mid_point/640*90, 
-                        heading+45-right_edge/640*90
-                    ]: 
+                        heading - 45,
+                        heading + 45,
+                        heading + 45 - left_edge / 640 * 90,
+                        heading + 45 - mid_point / 640 * 90,
+                        heading + 45 - right_edge / 640 * 90,
+                    ]:
                         edge_length = 50
                         x, y = 0, 0
                         endx = x + edge_length * math.cos(math.radians(angle))
                         endy = y + edge_length * math.sin(math.radians(angle))
-                        ax.plot([x,endx],[y,endy])
-                    for angle in [heading-180+45-mid_point/640*90]: 
+                        ax.plot([x, endx], [y, endy])
+                    for angle in [heading - 180 + 45 - mid_point / 640 * 90]:
                         repo_length = 5
                         x, y = 0, 0
                         endx = x + repo_length * math.cos(math.radians(angle))
                         endy = y + repo_length * math.sin(math.radians(angle))
-                        ax.plot([x,endx],[y,endy])
-                        ax.plot(endx,endy, 'rx', markersize=20,)
-                    plt.savefig(save_loc+"p"+largest["fn"].split("_")[1]+"_s4"+".png")
+                        ax.plot([x, endx], [y, endy])
+                        ax.plot(
+                            endx,
+                            endy,
+                            "rx",
+                            markersize=20,
+                        )
+                    plt.savefig(
+                        save_loc + "p" + largest["fn"].split("_")[1] + "_s4" + ".png"
+                    )
                     plt.close(fig)
                     # plt.show()
                 else:
-                    cv2.imwrite(save_loc+"p"+largest["fn"].split("_")[1]+"_sF"+".png", cv2.cvtColor(largest["orig_img"], cv2.COLOR_BGR2RGB))
+                    cv2.imwrite(
+                        save_loc + "p" + largest["fn"].split("_")[1] + "_sF" + ".png",
+                        cv2.cvtColor(largest["orig_img"], cv2.COLOR_BGR2RGB),
+                    )
 
             if counter == iterations:
                 break
