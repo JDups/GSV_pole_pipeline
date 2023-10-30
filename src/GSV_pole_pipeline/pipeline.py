@@ -117,7 +117,7 @@ class Pipeline:
                         )
 
             if largest["fn"] is None:
-                print("No pole found at location")
+                print(f"No {self.rls['interest'][0]} found at location")
             else:
                 cv2.imwrite(
                     save_loc
