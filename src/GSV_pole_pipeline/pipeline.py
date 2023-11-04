@@ -211,9 +211,10 @@ class Pipeline:
                     plt.close(fig)
                     # plt.show()
                 else:
-                    cv2.imwrite(
-                        self.log_fp + "p" + largest["fn"].split("_")[1] + "_sF" + ".png",
-                        cv2.cvtColor(largest["orig_img"], cv2.COLOR_BGR2RGB),
+                    self.save_log_img(
+                        largest["fn"],
+                        largest["orig_img"],
+                        step_n="F",
                     )
 
             if counter == iterations:
