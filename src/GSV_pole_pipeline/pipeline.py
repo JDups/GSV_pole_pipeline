@@ -26,21 +26,41 @@ def show_masks_indiv(preds, rules):
 
 
 class Pipeline:
-    def __init__(self, loader, predictor, rules={}):
+    def __init__(self, loader, predictor, rules={}, log_fp=None):
         self.lder = loader
         self.pder = predictor
         self.rls = rules
+        self.log_fp = log_fp
 
-    def run(self, save_loc=None, iterations=None):
+        if self.log_fp:
+            os.makedirs(self.log_fp, exist_ok=True)
+
+    def save_log_img(self, fn, img, step_n, post_str=""):
+        cv2.imwrite(
+            self.log_fp
+            + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png",
+            cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+        )
+
+    def run(self, iterations=None):
         counter = 0
-        if save_loc:
-            os.makedirs(save_loc, exist_ok=True)
+        # if save_loc:
+        #     os.makedirs(save_loc, exist_ok=True)
 
-        for pid in self.lder.pole_imgs_df["pole_id"].unique():
+        # for pid in self.lder.locations_df["pole_id"].unique():
+
+        #     batch = self.lder.get_batch(pid)
+        #     print(batch)
+        #     break
+
+        # return 0
+
+        for pid in self.lder.data_df["pole_id"].unique():
+            pid = 12390
             counter += 1
             print(f"\nPole ID: {pid}")
-            # batch = self.lder.get_batch(pid)
-            preds = self.pder.predict(self.lder.get_batch(pid))
+            batch = self.lder.get_batch(pid)
+            preds = self.pder.predict(batch)
 
             # print(preds[0])
 
@@ -55,34 +75,19 @@ class Pipeline:
             }
 
             for p in preds:
-                if save_loc:
-                    cv2.imwrite(
-                        save_loc
-                        + "p"
-                        + p["fn"].split("_")[1]
-                        + "_s1__h"
-                        + p["fn"].split("_")[3]
-                        + ".png",
-                        cv2.cvtColor(p["orig_img"], cv2.COLOR_BGR2RGB),
-                    )
+                if self.log_fp:
+                    self.save_log_img(p["fn"], p["orig_img"], step_n=1)
+
                 occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
                 mcntr = 0
                 for clss, m in zip(p["out"]["class"], p["out"]["mask"]):
-                    if save_loc:
-                        cv2.imwrite(
-                            save_loc
-                            + "p"
-                            + p["fn"].split("_")[1]
-                            + "_s2_h"
-                            + p["fn"].split("_")[3]
-                            + f"_{mcntr}_"
-                            + clss
-                            + ".png",
-                            cv2.cvtColor(
-                                show_mask(p["orig_img"], p_msk=m, show=False),
-                                cv2.COLOR_BGR2RGB,
-                            ),
+                    if self.log_fp:
+                        self.save_log_img(
+                            p["fn"],
+                            show_mask(p["orig_img"], p_msk=m, show=False),
+                            step_n=2,
+                            post_str=f"_{mcntr}_{clss}.png",
                         )
                         mcntr += 1
 
@@ -104,38 +109,29 @@ class Pipeline:
                 # else:
                 #     print("No pole yet")
 
-                if save_loc:
+                if self.log_fp:
                     if not p["out"]["mask"]:
-                        cv2.imwrite(
-                            save_loc
-                            + "p"
-                            + p["fn"].split("_")[1]
-                            + "_s2_h"
-                            + p["fn"].split("_")[3]
-                            + "_no_masks.png",
-                            cv2.cvtColor(p["orig_img"], cv2.COLOR_BGR2RGB),
+                        self.save_log_img(
+                            p["fn"],
+                            p["orig_img"],
+                            step_n=2,
+                            post_str="_no_masks.png",
                         )
 
             if largest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
             else:
-                cv2.imwrite(
-                    save_loc
-                    + "p"
-                    + largest["fn"].split("_")[1]
-                    + "_s3_h"
-                    + largest["fn"].split("_")[3]
-                    + ".png",
-                    cv2.cvtColor(
+                if self.log_fp:
+                    self.save_log_img(
+                        largest["fn"],
                         show_mask(
                             largest["orig_img"],
                             p_msk=largest["interest"],
                             n_msk=largest["occluding"],
                             show=False,
                         ),
-                        cv2.COLOR_BGR2RGB,
-                    ),
-                )
+                        step_n=3,
+                    )
 
                 print(f"File: {largest['fn']}")
                 overlap = np.logical_and(
@@ -144,13 +140,16 @@ class Pipeline:
                 print(overlap)
                 if overlap:
                     column_sum = largest["interest"].sum(axis=0)
-                    print(column_sum)
+                    # print(column_sum)
                     colums_hit = np.nonzero(column_sum)
-                    print(colums_hit)
+                    # print(colums_hit)
                     left_edge = np.min(colums_hit)
                     right_edge = np.max(colums_hit)
                     mid_point = (right_edge + left_edge) / 2
-                    print(mid_point)
+                    print(f"left_edge: {left_edge}")
+                    print(f"right_edge: {right_edge}")
+                    print(f"mid_point: {mid_point}")
+                    # print(mid_point)
                     # show_mask(
                     #     largest["orig_img"],
                     #     p_msk=largest["interest"],
@@ -158,13 +157,27 @@ class Pipeline:
                     # )
                     # https://stackoverflow.com/questions/28417604/plotting-a-line-from-a-coordinate-with-and-angle
                     fig, ax = plt.subplots()
-                    heading = int(largest["fn"].split("_")[3])
-                    ax.set_xlim(-10, 10)
-                    ax.set_ylim(-10, 10)
-                    print(left_edge / 640 * 90)
-                    print(right_edge / 640 * 90)
+                    heading = -int(largest["fn"].split("_")[3]) + 90
+                    print(f"heading: {heading}")
+                    # ax.set_xlim(-10, 10)
+                    # ax.set_ylim(-10, 10)
+                    # print(left_edge / 640 * 90)
+                    # print(right_edge / 640 * 90)
 
-                    ax.plot(0, 0, "ro", markersize=20, fillstyle="none")
+                    lat = batch[0]["metadata"]["location"]["lat"]
+                    lng = batch[0]["metadata"]["location"]["lng"]
+                    print(f"GSV lat: {lat} lng: {lng}")
+                    plat = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
+                        "Latitude"
+                    ].values[0]
+                    plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
+                        "Longitude"
+                    ].values[0]
+                    print(f"CSV lat: {plat} lng: {plng}")
+                    ax.plot(lng, lat, "ro", markersize=20, fillstyle="none")
+                    ax.plot(plng, plat, "bo", markersize=20, fillstyle="none")
+
+                    # ax.text(0,0, f"{lat} {lng}")
 
                     for angle in [
                         heading - 45,
@@ -173,14 +186,16 @@ class Pipeline:
                         heading + 45 - mid_point / 640 * 90,
                         heading + 45 - right_edge / 640 * 90,
                     ]:
-                        edge_length = 50
-                        x, y = 0, 0
+                        edge_length = 0.0005
+                        # x, y = 0, 0
+                        x, y = lng, lat
                         endx = x + edge_length * math.cos(math.radians(angle))
                         endy = y + edge_length * math.sin(math.radians(angle))
                         ax.plot([x, endx], [y, endy])
                     for angle in [heading - 180 + 45 - mid_point / 640 * 90]:
-                        repo_length = 5
-                        x, y = 0, 0
+                        repo_length = 0.0005
+                        # x, y = 0, 0
+                        x, y = lng, lat
                         endx = x + repo_length * math.cos(math.radians(angle))
                         endy = y + repo_length * math.sin(math.radians(angle))
                         ax.plot([x, endx], [y, endy])
@@ -191,13 +206,13 @@ class Pipeline:
                             markersize=20,
                         )
                     plt.savefig(
-                        save_loc + "p" + largest["fn"].split("_")[1] + "_s4" + ".png"
+                        self.log_fp + "p" + largest["fn"].split("_")[1] + "_s4" + ".png"
                     )
                     plt.close(fig)
                     # plt.show()
                 else:
                     cv2.imwrite(
-                        save_loc + "p" + largest["fn"].split("_")[1] + "_sF" + ".png",
+                        self.log_fp + "p" + largest["fn"].split("_")[1] + "_sF" + ".png",
                         cv2.cvtColor(largest["orig_img"], cv2.COLOR_BGR2RGB),
                     )
 
@@ -217,4 +232,5 @@ class Pipeline:
           The Pipeline could be given a list of what prediction represent what we want and which represent what we don't want.
           It could then use that list to cross compare the outputs of multiple process objects
         
+        - I think i will need an addition to the rules where I apply classifiers to certain masks/boxes
 """
