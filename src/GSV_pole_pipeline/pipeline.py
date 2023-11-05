@@ -1,5 +1,6 @@
 import numpy as np
 from utils import show_mask, get_overlay
+import matplotlib
 import matplotlib.pyplot as plt
 import math
 import os
@@ -36,11 +37,15 @@ class Pipeline:
             os.makedirs(self.log_fp, exist_ok=True)
 
     def save_log_img(self, fn, img, step_n, post_str=""):
-        cv2.imwrite(
+        fn = (
             self.log_fp
-            + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png",
-            cv2.cvtColor(img, cv2.COLOR_BGR2RGB),
+            + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
         )
+
+        if isinstance(img, np.ndarray):
+            cv2.imwrite(fn, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        elif isinstance(img, matplotlib.figure.Figure):
+            plt.savefig(fn)
 
     def run(self, iterations=None):
         counter = 0
@@ -205,11 +210,15 @@ class Pipeline:
                             "rx",
                             markersize=20,
                         )
-                    plt.savefig(
-                        self.log_fp + "p" + largest["fn"].split("_")[1] + "_s4" + ".png"
+
+                    self.save_log_img(
+                        largest["fn"],
+                        fig,
+                        step_n=4,
                     )
                     plt.close(fig)
                     # plt.show()
+
                 else:
                     self.save_log_img(
                         largest["fn"],
