@@ -49,16 +49,6 @@ class Pipeline:
 
     def run(self, iterations=None):
         counter = 0
-        # if save_loc:
-        #     os.makedirs(save_loc, exist_ok=True)
-
-        # for pid in self.lder.locations_df["pole_id"].unique():
-
-        #     batch = self.lder.get_batch(pid)
-        #     print(batch)
-        #     break
-
-        # return 0
 
         for pid in self.lder.data_df["pole_id"].unique():
             pid = 12390
@@ -85,8 +75,9 @@ class Pipeline:
 
                 occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
-                mcntr = 0
-                for clss, m in zip(p["out"]["class"], p["out"]["mask"]):
+                for mcntr, (clss, m) in enumerate(
+                    zip(p["out"]["class"], p["out"]["mask"])
+                ):
                     if self.log_fp:
                         self.save_log_img(
                             p["fn"],
@@ -94,7 +85,6 @@ class Pipeline:
                             step_n=2,
                             post_str=f"_{mcntr}_{clss}.png",
                         )
-                        mcntr += 1
 
                     if clss in self.rls["occluding"]:
                         occl = np.logical_or(occl, m)
