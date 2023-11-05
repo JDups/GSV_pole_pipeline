@@ -99,7 +99,6 @@ class Pipeline:
                             }
 
                 if largest["fn"] == p["fn"]:
-                    # print(largest["interest"].sum())
                     largest["occluding"] = occl
                 # else:
                 #     print("No pole yet")
