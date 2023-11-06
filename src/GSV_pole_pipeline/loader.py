@@ -9,11 +9,11 @@ import requests
 from PIL import Image
 from io import BytesIO
 import numpy as np
+import math
 
 """
 TODO:
-Create super class. Move log save loc method to it. 
-Also create output fomrating method, similar to Predictor super class.
+Create super class formating method, similar to Predictor super class.
 
 I think implementing a method to get an image set from lat and long will let me 
 call it in the pieline for readjusting and that method can also be called in get_batch
@@ -99,20 +99,21 @@ class GSVFetch(Loader):
         api_results = gsv.api.results(api_list)
         api_results.save_links(self.log_fp + "links.txt")
         api_results.save_metadata(self.log_fp + "metadata.json")
+        # print(api_results.metadata)
 
-        # return api_results.metadata
-        # pole_1114_heading_0_pitch_10_zoom_0_fov_90
+        rlat = api_results.metadata[0]["location"]["lat"]
+        rlng = api_results.metadata[0]["location"]["lng"]
+        dlat = rlat - lat
+        dlng = rlng - lng
+        est_heading = int(-math.degrees(math.atan2(dlat, dlng)) - 90)
 
-        if self.full_360:
-            fn = [
-                f"pole_{pid}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
-                for args in api_list
-            ]
-        else:
-            fn = [
-                f"pole_{pid}_heading_XXX_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
-                for args in api_list
-            ]
+        if not self.full_360:
+            api_list[0]['heading'] = est_heading
+
+        fn = [
+            f"pole_{pid}_heading_{est_heading}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
+            for args in api_list
+        ]
 
         return [
             {
