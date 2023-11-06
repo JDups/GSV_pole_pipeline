@@ -133,9 +133,14 @@ class Pipeline:
                     largest["interest"], largest["occluding"]
                 ).sum()
                 print(overlap)
-                if overlap:
+                if overlap == 0:
+                    self.save_log_img(
+                        largest["fn"],
+                        largest["orig_img"],
+                        step_n="F",
+                    )
+                else:
                     column_sum = largest["interest"].sum(axis=0)
-                    # print(column_sum)
                     colums_hit = np.nonzero(column_sum)
                     # print(colums_hit)
                     left_edge = np.min(colums_hit)
@@ -174,6 +179,7 @@ class Pipeline:
 
                     # ax.text(0,0, f"{lat} {lng}")
 
+                    nlat, nlng = lat, lng
                     for angle in [
                         heading - 45,
                         heading + 45,
@@ -193,28 +199,39 @@ class Pipeline:
                         x, y = lng, lat
                         endx = x + repo_length * math.cos(math.radians(angle))
                         endy = y + repo_length * math.sin(math.radians(angle))
+                        nlat, nlng = endy, endx
                         ax.plot([x, endx], [y, endy])
                         ax.plot(
                             endx,
                             endy,
-                            "rx",
+                            "bx",
                             markersize=20,
                         )
+
+                    dlat = nlat - plat
+                    dlng = nlng - plng
+                    est_heading = int(-math.degrees(math.atan2(dlat, dlng)) - 90)
+
+                    new_pic = self.lder.pic_from_loc_head(pid, nlat, nlng, est_heading)[0]
+
+                    self.save_log_img(
+                        new_pic["fn"],
+                        new_pic["img"],
+                        step_n=4,
+                    )
+
+                    clat = new_pic["metadata"]["location"]["lat"]
+                    clng = new_pic["metadata"]["location"]["lng"]
+                    ax.plot(clng, clat, "rx", markersize=20, fillstyle="none")
 
                     self.save_log_img(
                         largest["fn"],
                         fig,
-                        step_n=4,
+                        step_n="P",
                     )
                     plt.close(fig)
                     # plt.show()
 
-                else:
-                    self.save_log_img(
-                        largest["fn"],
-                        largest["orig_img"],
-                        step_n="F",
-                    )
 
             if counter == iterations:
                 break

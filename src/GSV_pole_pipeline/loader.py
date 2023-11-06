@@ -75,18 +75,19 @@ class GSVFetch(Loader):
         self.API_key = API_key
         self.full_360 = full_360
 
-    def pic_from_loc_head(self, lat, lng, heading):
+    def pic_from_loc_head(self, pid, lat, lng, heading):
         apiargs = {
             "location": f"{lat},{lng}",
             "size": "640x640",
             "fov": "90",
             "pitch": "10",
-            "heading": heading,
+            "heading": str(heading),
             "key": self.API_key,
             "source": "outdoor",
         }
 
         api_list = gsv.helpers.api_list(apiargs)
+        api_results = gsv.api.results(api_list)
         if self.log_fp:
             api_results.save_links(self.log_fp + "links.txt")
             api_results.save_metadata(self.log_fp + "metadata.json")
