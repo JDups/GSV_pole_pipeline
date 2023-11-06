@@ -75,6 +75,36 @@ class GSVFetch(Loader):
         self.API_key = API_key
         self.full_360 = full_360
 
+    def pic_from_loc_head(self, lat, lng, heading):
+        apiargs = {
+            "location": f"{lat},{lng}",
+            "size": "640x640",
+            "fov": "90",
+            "pitch": "10",
+            "heading": heading,
+            "key": self.API_key,
+            "source": "outdoor",
+        }
+
+        api_list = gsv.helpers.api_list(apiargs)
+        if self.log_fp:
+            api_results.save_links(self.log_fp + "links.txt")
+            api_results.save_metadata(self.log_fp + "metadata.json")
+
+        fn = [
+            f"pole_{pid}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
+            for args in api_list
+        ]
+
+        return [
+            {
+                "img": np.array(Image.open(BytesIO(requests.get(link).content))),
+                "fn": fn,
+                "metadata": mtdt,
+            }
+            for link, fn, mtdt in zip(api_results.links, fn, api_results.metadata)
+        ]
+
     def get_batch(self, pid):
         row = self.data_df[self.data_df["pole_id"] == pid]
         lat = row["Latitude"].values[0]
@@ -94,8 +124,9 @@ class GSVFetch(Loader):
 
         api_list = gsv.helpers.api_list(apiargs)
         api_results = gsv.api.results(api_list)
-        api_results.save_links(self.log_fp + "links.txt")
-        api_results.save_metadata(self.log_fp + "metadata.json")
+        if self.log_fp:
+            api_results.save_links(self.log_fp + "links.txt")
+            api_results.save_metadata(self.log_fp + "metadata.json")
         # print(api_results.metadata)
 
         rlat = api_results.metadata[0]["location"]["lat"]
@@ -108,7 +139,7 @@ class GSVFetch(Loader):
             api_list[0]['heading'] = est_heading
 
         fn = [
-            f"pole_{pid}_heading_{est_heading}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
+            f"pole_{pid}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
             for args in api_list
         ]
 
