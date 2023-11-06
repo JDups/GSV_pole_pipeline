@@ -193,20 +193,38 @@ class Pipeline:
                         endx = x + edge_length * math.cos(math.radians(angle))
                         endy = y + edge_length * math.sin(math.radians(angle))
                         ax.plot([x, endx], [y, endy])
-                    for angle in [heading - 180 + 45 - mid_point / 640 * 90]:
-                        repo_length = 0.0005
-                        # x, y = 0, 0
-                        x, y = lng, lat
-                        endx = x + repo_length * math.cos(math.radians(angle))
-                        endy = y + repo_length * math.sin(math.radians(angle))
-                        nlat, nlng = endy, endx
-                        ax.plot([x, endx], [y, endy])
-                        ax.plot(
-                            endx,
-                            endy,
-                            "bx",
-                            markersize=20,
-                        )
+
+                    strat = "ortho"
+                    if strat == "backup":
+                        for angle in [heading - 180 + 45 - mid_point / 640 * 90]:
+                            repo_length = 0.0005
+                            # x, y = 0, 0
+                            x, y = lng, lat
+                            endx = x + repo_length * math.cos(math.radians(angle))
+                            endy = y + repo_length * math.sin(math.radians(angle))
+                            nlat, nlng = endy, endx
+                            ax.plot([x, endx], [y, endy])
+                            ax.plot(
+                                endx,
+                                endy,
+                                "bx",
+                                markersize=20,
+                            )
+                    if strat == "ortho":
+                        for angle in [heading - 90 + 45 - mid_point / 640 * 90]:
+                            repo_length = 0.0005
+                            # x, y = 0, 0
+                            x, y = lng, lat
+                            endx = x + repo_length * math.cos(math.radians(angle))
+                            endy = y + repo_length * math.sin(math.radians(angle))
+                            nlat, nlng = endy, endx
+                            ax.plot([x, endx], [y, endy])
+                            ax.plot(
+                                endx,
+                                endy,
+                                "bx",
+                                markersize=20,
+                            )
 
                     dlat = nlat - plat
                     dlng = nlng - plng
