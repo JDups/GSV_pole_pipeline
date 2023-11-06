@@ -230,7 +230,9 @@ class Pipeline:
                     dlng = nlng - plng
                     est_heading = int(-math.degrees(math.atan2(dlat, dlng)) - 90)
 
-                    new_pic = self.lder.pic_from_loc_head(pid, nlat, nlng, est_heading)[0]
+                    new_pic = self.lder.pic_from_loc_head(pid, nlat, nlng, est_heading)[
+                        0
+                    ]
 
                     self.save_log_img(
                         new_pic["fn"],
@@ -249,7 +251,6 @@ class Pipeline:
                     )
                     plt.close(fig)
                     # plt.show()
-
 
             if counter == iterations:
                 break

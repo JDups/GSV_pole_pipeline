@@ -137,7 +137,7 @@ class GSVFetch(Loader):
         est_heading = int(-math.degrees(math.atan2(dlat, dlng)) - 90)
 
         if not self.full_360:
-            api_list[0]['heading'] = est_heading
+            api_list[0]["heading"] = est_heading
 
         fn = [
             f"pole_{pid}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
