@@ -10,11 +10,32 @@ from PIL import Image
 from io import BytesIO
 import numpy as np
 
+"""
+TODO:
+Create super class. Move log save loc method to it. 
+Also create output fomrating method, similar to Predictor super class.
 
-class ImgFetch:
+I think implementing a method to get an image set from lat and long will let me 
+call it in the pieline for readjusting and that method can also be called in get_batch
+
+An arg to either get 360 or two call process where we get picture with heading based on
+difference of coordinates. Either way should work with pipeline with no changes.
+"""
+
+
+class Loader:
+    def __init__(self):
+        self.log_fp = ""
+
+    def set_log_fp(self, log_fp):
+        self.log_fp = log_fp
+
+
+class ImgFetch(Loader):
     __supported_image_formats = ["png", "jpg"]
 
     def __init__(self, directory=None):
+        super().__init__()
         self.directory = directory
         self.dir_div = "/"
 
@@ -50,10 +71,12 @@ class ImgFetch:
         ]
 
 
-class GSVFetch:
-    def __init__(self, csv_file, API_key):
+class GSVFetch(Loader):
+    def __init__(self, csv_file, API_key, full_360=False):
+        super().__init__()
         self.data_df = pd.read_csv(csv_file)
         self.API_key = API_key
+        self.full_360 = full_360
 
     def get_batch(self, pid):
         row = self.data_df[self.data_df["pole_id"] == pid]
@@ -64,23 +87,32 @@ class GSVFetch:
         apiargs = {
             "location": f"{lat},{lng}",
             "size": "640x640",
-            "heading": "0;90;180;270",
             "fov": "90",
             "pitch": "10",
             "key": self.API_key,
+            "source": "outdoor",
         }
+        if self.full_360:
+            apiargs["heading"] = "0;90;180;270"
+
         api_list = gsv.helpers.api_list(apiargs)
         api_results = gsv.api.results(api_list)
-        api_results.save_links("links.txt")
-        api_results.save_metadata("metadata.json")
+        api_results.save_links(self.log_fp + "links.txt")
+        api_results.save_metadata(self.log_fp + "metadata.json")
 
         # return api_results.metadata
         # pole_1114_heading_0_pitch_10_zoom_0_fov_90
 
-        fn = [
-            f"pole_{pid}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
-            for args in api_list
-        ]
+        if self.full_360:
+            fn = [
+                f"pole_{pid}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
+                for args in api_list
+            ]
+        else:
+            fn = [
+                f"pole_{pid}_heading_XXX_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
+                for args in api_list
+            ]
 
         return [
             {
@@ -90,11 +122,3 @@ class GSVFetch:
             }
             for link, fn, mtdt in zip(api_results.links, fn, api_results.metadata)
         ]
-
-    """
-    I think implementing a method to get an image set from lat and long will let me 
-    call it in the pieline for readjusting and that method can also be called in get_batch
-
-    An arg to either get 360 or two call process where we get picture with heading based on
-    difference of coordinates. Either way should work with pipeline with no changes.
-    """
