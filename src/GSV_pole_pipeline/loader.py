@@ -17,9 +17,6 @@ Create super class formating method, similar to Predictor super class.
 
 I think implementing a method to get an image set from lat and long will let me 
 call it in the pieline for readjusting and that method can also be called in get_batch
-
-An arg to either get 360 or two call process where we get picture with heading based on
-difference of coordinates. Either way should work with pipeline with no changes.
 """
 
 
