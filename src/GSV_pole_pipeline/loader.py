@@ -10,17 +10,15 @@ from PIL import Image
 from io import BytesIO
 import numpy as np
 import math
+from abc import ABC, abstractmethod
 
 """
-TODO:
-Create super class formating method, similar to Predictor super class.
-
 TODO: Loader log_fp setter is useless, should probably just acess attribute directly
 
 """
 
 
-class Loader:
+class Loader(ABC):
     def __init__(self):
         self.log_fp = ""
 
@@ -30,6 +28,13 @@ class Loader:
     @abstractmethod
     def get_batch(self, idn):
         pass
+
+    def output_dict(self, fn=None, img=None, mtdt=None):
+        return {
+            "fn": fn,
+            "img": img,
+            "metadata": mtdt,
+        }
 
 
 class ImgFetch(Loader):
@@ -65,7 +70,7 @@ class ImgFetch(Loader):
         ]
 
         return [
-            {"img": img, "fn": fn}
+            self.output_dict(fn=fn, img=img)
             for img, fn in zip(
                 imgs, self.data_df[self.data_df["pole_id"] == idn]["img_fn"]
             )
@@ -113,11 +118,11 @@ class GSVFetch(Loader):
         ]
 
         return [
-            {
-                "img": np.array(Image.open(BytesIO(requests.get(link).content))),
-                "fn": fn,
-                "metadata": mtdt,
-            }
+            self.output_dict(
+                fn=fn,
+                img=np.array(Image.open(BytesIO(requests.get(link).content))),
+                mtdt=mtdt,
+            )
             for link, fn, mtdt in zip(api_results.links, fn, api_results.metadata)
         ]
 

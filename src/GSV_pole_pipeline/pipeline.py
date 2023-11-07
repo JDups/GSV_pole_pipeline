@@ -6,6 +6,11 @@ import math
 import os
 import cv2
 
+"""
+TODO:
+Remove if log_fp condition checks from run() and move it to save_log_img()
+"""
+
 
 def show_masks_indiv(preds, rules):
     for p in preds:
