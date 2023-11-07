@@ -100,8 +100,8 @@ class GSVFetch(Loader):
             api_results.save_metadata(self.log_fp + "metadata.json")
         # print(api_results.metadata)
 
-        rlat = api_results.metadata[0]["location"]["lat"] # real Latitude
-        rlng = api_results.metadata[0]["location"]["lng"] # real Longitude
+        rlat = api_results.metadata[0]["location"]["lat"]  # real Latitude
+        rlng = api_results.metadata[0]["location"]["lng"]  # real Longitude
         dlat = lat - rlat
         dlng = lng - rlng
         est_heading = int((-math.degrees(math.atan2(dlat, dlng)) + 90) % 360)
