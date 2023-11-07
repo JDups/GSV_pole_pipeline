@@ -22,9 +22,6 @@ class Loader(ABC):
     def __init__(self):
         self.log_fp = ""
 
-    def set_log_fp(self, log_fp):
-        self.log_fp = log_fp
-
     @abstractmethod
     def get_batch(self, idn):
         pass

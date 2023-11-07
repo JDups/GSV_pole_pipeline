@@ -40,7 +40,8 @@ class Pipeline:
 
         if self.log_fp:
             os.makedirs(self.log_fp, exist_ok=True)
-            self.lder.set_log_fp(self.log_fp)
+            # self.lder.set_log_fp(self.log_fp)
+            self.lder.log_fp = self.log_fp
 
     def save_log_img(self, fn, img, step_n, post_str=""):
         fn = (
