@@ -101,8 +101,6 @@ class Pipeline:
 
                 if largest["fn"] == p["fn"]:
                     largest["occluding"] = occl
-                # else:
-                #     print("No pole yet")
 
                 if self.log_fp:
                     if not p["out"]["mask"]:
@@ -226,13 +224,13 @@ class Pipeline:
                                 markersize=20,
                             )
 
-                    dlat = nlat - plat
-                    dlng = nlng - plng
-                    est_heading = int(-math.degrees(math.atan2(dlat, dlng)) - 90)
+                    dlat = plat - nlat
+                    dlng = plng - nlng
+                    est_heading = int(
+                        (-math.degrees(math.atan2(dlat, dlng)) + 90) % 360
+                    )
 
-                    new_pic = self.lder.pic_from_loc_head(pid, nlat, nlng, est_heading)[
-                        0
-                    ]
+                    new_pic = self.lder.pic_from_loc(pid, nlat, nlng, est_heading)[0]
 
                     self.save_log_img(
                         new_pic["fn"],

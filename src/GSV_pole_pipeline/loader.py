@@ -15,8 +15,8 @@ import math
 TODO:
 Create super class formating method, similar to Predictor super class.
 
-I think implementing a method to get an image set from lat and long will let me 
-call it in the pieline for readjusting and that method can also be called in get_batch
+TODO: Loader log_fp setter is useless, should probably just acess attribute directly
+
 """
 
 
@@ -26,6 +26,10 @@ class Loader:
 
     def set_log_fp(self, log_fp):
         self.log_fp = log_fp
+
+    @abstractmethod
+    def get_batch(self, idn):
+        pass
 
 
 class ImgFetch(Loader):
@@ -74,54 +78,18 @@ class GSVFetch(Loader):
         self.data_df = pd.read_csv(csv_file)
         self.API_key = API_key
         self.full_360 = full_360
-
-    def pic_from_loc_head(self, pid, lat, lng, heading):
-        apiargs = {
-            "location": f"{lat},{lng}",
-            "size": "640x640",
-            "fov": "90",
-            "pitch": "10",
-            "heading": str(heading),
-            "key": self.API_key,
-            "source": "outdoor",
-        }
-
-        api_list = gsv.helpers.api_list(apiargs)
-        api_results = gsv.api.results(api_list)
-        if self.log_fp:
-            api_results.save_links(self.log_fp + "links.txt")
-            api_results.save_metadata(self.log_fp + "metadata.json")
-
-        fn = [
-            f"pole_{pid}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
-            for args in api_list
-        ]
-
-        return [
-            {
-                "img": np.array(Image.open(BytesIO(requests.get(link).content))),
-                "fn": fn,
-                "metadata": mtdt,
-            }
-            for link, fn, mtdt in zip(api_results.links, fn, api_results.metadata)
-        ]
-
-    def get_batch(self, pid):
-        row = self.data_df[self.data_df["pole_id"] == pid]
-        lat = row["Latitude"].values[0]
-        lng = row["Longitude"].values[0]
-        print(f"Lat: {lat}  Long: {lng}")
-
-        apiargs = {
-            "location": f"{lat},{lng}",
+        self.api_defaults = {
             "size": "640x640",
             "fov": "90",
             "pitch": "10",
             "key": self.API_key,
             "source": "outdoor",
         }
-        if self.full_360:
-            apiargs["heading"] = "0;90;180;270"
+
+    def pic_from_loc(self, idn, lat, lng, heading=None):
+        apiargs = self.api_defaults.copy()
+        apiargs["location"] = f"{lat},{lng}"
+        apiargs["heading"] = str(heading)
 
         api_list = gsv.helpers.api_list(apiargs)
         api_results = gsv.api.results(api_list)
@@ -132,15 +100,15 @@ class GSVFetch(Loader):
 
         rlat = api_results.metadata[0]["location"]["lat"]
         rlng = api_results.metadata[0]["location"]["lng"]
-        dlat = rlat - lat
-        dlng = rlng - lng
-        est_heading = int(-math.degrees(math.atan2(dlat, dlng)) - 90)
+        dlat = lat - rlat
+        dlng = lng - rlng
+        est_heading = int((-math.degrees(math.atan2(dlat, dlng)) + 90) % 360)
 
-        if not self.full_360:
+        if not heading:
             api_list[0]["heading"] = est_heading
 
         fn = [
-            f"pole_{pid}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
+            f"pole_{idn}_heading_{args['heading']}_pitch_{args['pitch']}_zoom_0_fov_{args['fov']}"
             for args in api_list
         ]
 
@@ -152,3 +120,17 @@ class GSVFetch(Loader):
             }
             for link, fn, mtdt in zip(api_results.links, fn, api_results.metadata)
         ]
+
+    def pic_from_loc_360(self, idn, lat, lng):
+        return self.pic_from_loc(idn, lat, lng, "0;90;180;270")
+
+    def get_batch(self, idn):
+        row = self.data_df[self.data_df["pole_id"] == idn]
+        lat = row["Latitude"].values[0]
+        lng = row["Longitude"].values[0]
+        print(f"Lat: {lat}  Long: {lng}")
+
+        if self.full_360:
+            return self.pic_from_loc_360(idn, lat, lng)
+        else:
+            return self.pic_from_loc(idn, lat, lng)
