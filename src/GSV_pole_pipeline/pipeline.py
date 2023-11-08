@@ -55,11 +55,9 @@ class Pipeline:
                 plt.savefig(fn)
 
     def run(self, iterations=None):
-        counter = 0
-
-        for pid in self.lder.data_df["pole_id"].unique():
+        for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
             pid = 12390
-            counter += 1
+            fig, ax = plt.subplots()
             print(f"\nPole ID: {pid}")
             batch = self.lder.get_batch(pid)
             preds = self.pder.predict(batch)
@@ -307,7 +305,7 @@ class Pipeline:
                     plt.close(fig)
                     # plt.show()
 
-            if counter == iterations:
+            if pcount == iterations:
                 break
 
 
