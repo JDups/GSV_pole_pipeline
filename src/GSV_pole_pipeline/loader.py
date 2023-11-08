@@ -13,8 +13,8 @@ import math
 from abc import ABC, abstractmethod
 
 """
-TODO: Loader log_fp setter is useless, should probably just acess attribute directly
-
+TODO: Add OK status check to GSV API repsonses.
+TODO: Use Path objects instead of strings for filepaths
 """
 
 

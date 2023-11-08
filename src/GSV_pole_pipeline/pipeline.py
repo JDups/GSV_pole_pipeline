@@ -8,7 +8,6 @@ import cv2
 
 """
 TODO:
-Remove if log_fp condition checks from run() and move it to save_log_img()
 """
 
 
@@ -57,10 +56,32 @@ class Pipeline:
     def run(self, iterations=None):
         for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
             pid = 12390
+            print(f"\nPole ID: {pid}")
+
             fig, ax = plt.subplots()
             plt.axis("equal")
-            print(f"\nPole ID: {pid}")
+
+            plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
+                ["Latitude", "Longitude"]
+            ].values[0]
+            print(f"CSV lat: {plat} lng: {plng}")
+            ax.plot(
+                plng,
+                plat,
+                color="tab:red",
+                marker="o",
+                markersize=20,
+                fillstyle="none",
+            )
+            ax.plot(plng, plat, color="tab:red", marker="o", markersize=3)
+
             batch = self.lder.get_batch(pid)
+
+            lat = batch[0]["metadata"]["location"]["lat"]
+            lng = batch[0]["metadata"]["location"]["lng"]
+            print(f"GSV lat: {lat} lng: {lng}")
+            ax.plot(lng, lat, color="tab:blue", marker="x", markersize=20)
+
             preds = self.pder.predict(batch)
 
             # print(preds[0])
@@ -132,119 +153,63 @@ class Pipeline:
                     largest["interest"], largest["occluding"]
                 ).sum()
 
+                img_w = largest["orig_img"].shape[0]
+                column_sum = largest["interest"].sum(axis=0)
+                colums_hit = np.nonzero(column_sum)
+                left_edge = np.min(colums_hit)
+                right_edge = np.max(colums_hit)
+                mid_point = (right_edge + left_edge) / 2
+                print(f"left_edge: {left_edge}")
+                print(f"right_edge: {right_edge}")
+                print(f"mid_point: {mid_point}")
+                view_len = 0.0003
+
+                # Turns gsv heading into angle from horizontal
+                # 0->90, 90->0, 180->-90, 270->-180, 360->-270
+                heading = -int(largest["fn"].split("_")[3]) + 90
+                print(f"heading: {heading}")
+
+                for angle in [-45, 45]:
+                    angle = heading + angle
+                    endx = lng + view_len * math.cos(math.radians(angle))
+                    endy = lat + view_len * math.sin(math.radians(angle))
+                    ax.plot([lng, endx], [lat, endy], "tab:blue")
+                for angle in [left_edge, mid_point, right_edge]:
+                    angle = heading + 45 - angle / img_w * 90
+                    endx = lng + view_len * math.cos(math.radians(angle))
+                    endy = lat + view_len * math.sin(math.radians(angle))
+                    ax.plot(
+                        [lng, endx],
+                        [lat, endy],
+                        "tab:red",
+                        linewidth=0.5,
+                        linestyle="--",
+                    )
+
                 if overlap == 1:
-                    self.save_log_img(
-                        largest["fn"],
-                        largest["orig_img"],
-                        step_n="F",
-                    )
+                    self.save_log_img(largest["fn"], largest["orig_img"], step_n="F")
+
                 else:
-                    img_w = largest["orig_img"].shape[0]
-                    column_sum = largest["interest"].sum(axis=0)
-                    colums_hit = np.nonzero(column_sum)
-                    left_edge = np.min(colums_hit)
-                    right_edge = np.max(colums_hit)
-                    mid_point = (right_edge + left_edge) / 2
-                    print(f"left_edge: {left_edge}")
-                    print(f"right_edge: {right_edge}")
-                    print(f"mid_point: {mid_point}")
-
-                    # show_mask(
-                    #     largest["orig_img"],
-                    #     p_msk=largest["interest"],
-                    #     n_msk=largest["occluding"],
-                    # )
-
-                    # https://stackoverflow.com/questions/28417604/plotting-a-line-from-a-coordinate-with-and-angle
-
-                    # Turns gsv heading into angle from horizontal
-                    # 0->90, 90->0, 180->-90, 270->-180, 360->-270
-                    heading = -int(largest["fn"].split("_")[3]) + 90
-                    print(f"heading: {heading}")
-
-                    # ax.set_xlim(-10, 10)
-                    # ax.set_ylim(-10, 10)
-                    # print(left_edge / 640 * 90)
-                    # print(right_edge / 640 * 90)
-
-                    lat = batch[0]["metadata"]["location"]["lat"]
-                    lng = batch[0]["metadata"]["location"]["lng"]
-                    print(f"GSV lat: {lat} lng: {lng}")
-                    plat = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
-                        "Latitude"
-                    ].values[0]
-                    plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
-                        "Longitude"
-                    ].values[0]
-                    print(f"CSV lat: {plat} lng: {plng}")
-
-                    ax.plot(
-                        lng,
-                        lat,
-                        color="tab:blue",
-                        marker="x",
-                        markersize=20,
-                        fillstyle="none",
-                    )
-                    ax.plot(
-                        plng,
-                        plat,
-                        color="tab:red",
-                        marker="o",
-                        markersize=20,
-                        fillstyle="none",
-                    )
-                    ax.plot(plng, plat, color="tab:red", marker="o", markersize=3)
-
-                    # ax.text(0,0, f"{lat} {lng}")
-                    edge_length = 0.0003
-                    repo_length = 0.0001
-                    for angle in [
-                        heading - 45,
-                        heading + 45,
-                    ]:
-                        x, y = lng, lat
-                        endx = x + edge_length * math.cos(math.radians(angle))
-                        endy = y + edge_length * math.sin(math.radians(angle))
-                        ax.plot([x, endx], [y, endy], "tab:blue")
-
-                    for angle in [
-                        heading + 45 - left_edge / img_w * 90,
-                        heading + 45 - mid_point / img_w * 90,
-                        heading + 45 - right_edge / img_w * 90,
-                    ]:
-                        x, y = lng, lat
-                        endx = x + edge_length * math.cos(math.radians(angle))
-                        endy = y + edge_length * math.sin(math.radians(angle))
-                        ax.plot(
-                            [x, endx],
-                            [y, endy],
-                            "tab:red",
-                            linewidth=0.5,
-                            linestyle="--",
-                        )
-
                     nlat, nlng = lat, lng
                     strat = "ortho"
                     adj_angl = 0
+                    repo_len = 0.0001
                     if strat == "backup":
                         adj_angl = heading - 180 + 45 - mid_point / img_w * 90
                     if strat == "ortho":
                         adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
-                    for angle in [adj_angl]:
-                        x, y = lng, lat
-                        endx = x + repo_length * math.cos(math.radians(angle))
-                        endy = y + repo_length * math.sin(math.radians(angle))
-                        nlat, nlng = endy, endx
-                        ax.plot([x, endx], [y, endy], "tab:brown")
-                        ax.plot(
-                            endx,
-                            endy,
-                            color="tab:brown",
-                            marker="x",
-                            markersize=20,
-                            fillstyle="none",
-                        )
+                    endx = lng + repo_len * math.cos(math.radians(adj_angl))
+                    endy = lat + repo_len * math.sin(math.radians(adj_angl))
+                    nlat, nlng = endy, endx
+                    ax.plot([lng, endx], [lat, endy], "tab:brown")
+                    ax.plot(
+                        endx,
+                        endy,
+                        color="tab:brown",
+                        marker="x",
+                        markersize=20,
+                        fillstyle="none",
+                    )
 
                     dlat = plat - nlat
                     dlng = plng - nlng
@@ -287,25 +252,21 @@ class Pipeline:
 
                     est_heading = -est_heading + 90
 
-                    for angle in [
-                        est_heading - 45,
-                        est_heading + 45,
-                    ]:
-                        x, y = clng, clat
-                        endx = x + edge_length * math.cos(math.radians(angle))
-                        endy = y + edge_length * math.sin(math.radians(angle))
-                        ax.plot([x, endx], [y, endy], "tab:cyan")
+                    for angle in [-45, 45]:
+                        angle = est_heading + angle
+                        endx = clng + view_len * math.cos(math.radians(angle))
+                        endy = clat + view_len * math.sin(math.radians(angle))
+                        ax.plot([clng, endx], [clat, endy], "tab:cyan")
 
-                    # plt.axis("equal")
-                    self.save_log_img(
-                        largest["fn"],
-                        fig,
-                        step_n="P",
-                    )
-                    plt.close(fig)
-                    # plt.show()
+                self.save_log_img(
+                    largest["fn"],
+                    fig,
+                    step_n="P",
+                )
+                plt.close(fig)
+                # plt.show()
 
-            if pcount+1 == iterations:
+            if pcount + 1 == iterations:
                 break
 
 
