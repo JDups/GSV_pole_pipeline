@@ -58,6 +58,7 @@ class Pipeline:
         for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
             pid = 12390
             fig, ax = plt.subplots()
+            plt.axis("equal")
             print(f"\nPole ID: {pid}")
             batch = self.lder.get_batch(pid)
             preds = self.pder.predict(batch)
@@ -155,7 +156,6 @@ class Pipeline:
                     # )
 
                     # https://stackoverflow.com/questions/28417604/plotting-a-line-from-a-coordinate-with-and-angle
-                    fig, ax = plt.subplots()
 
                     # Turns gsv heading into angle from horizontal
                     # 0->90, 90->0, 180->-90, 270->-180, 360->-270
@@ -296,7 +296,7 @@ class Pipeline:
                         endy = y + edge_length * math.sin(math.radians(angle))
                         ax.plot([x, endx], [y, endy], "tab:cyan")
 
-                    plt.axis("equal")
+                    # plt.axis("equal")
                     self.save_log_img(
                         largest["fn"],
                         fig,
@@ -305,7 +305,7 @@ class Pipeline:
                     plt.close(fig)
                     # plt.show()
 
-            if pcount == iterations:
+            if pcount+1 == iterations:
                 break
 
 
