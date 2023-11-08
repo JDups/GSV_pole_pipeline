@@ -40,19 +40,19 @@ class Pipeline:
 
         if self.log_fp:
             os.makedirs(self.log_fp, exist_ok=True)
-            # self.lder.set_log_fp(self.log_fp)
             self.lder.log_fp = self.log_fp
 
     def save_log_img(self, fn, img, step_n, post_str=""):
-        fn = (
-            self.log_fp
-            + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
-        )
+        if self.log_fp:
+            fn = (
+                self.log_fp
+                + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
+            )
 
-        if isinstance(img, np.ndarray):
-            cv2.imwrite(fn, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        elif isinstance(img, matplotlib.figure.Figure):
-            plt.savefig(fn)
+            if isinstance(img, np.ndarray):
+                cv2.imwrite(fn, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+            elif isinstance(img, matplotlib.figure.Figure):
+                plt.savefig(fn)
 
     def run(self, iterations=None):
         counter = 0
@@ -77,21 +77,19 @@ class Pipeline:
             }
 
             for p in preds:
-                if self.log_fp:
-                    self.save_log_img(p["fn"], p["orig_img"], step_n=1)
+                self.save_log_img(p["fn"], p["orig_img"], step_n=1)
 
                 occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
                 for mcntr, (clss, m) in enumerate(
                     zip(p["out"]["class"], p["out"]["mask"])
                 ):
-                    if self.log_fp:
-                        self.save_log_img(
-                            p["fn"],
-                            show_mask(p["orig_img"], p_msk=m, show=False),
-                            step_n=2,
-                            post_str=f"_{mcntr}_{clss}.png",
-                        )
+                    self.save_log_img(
+                        p["fn"],
+                        show_mask(p["orig_img"], p_msk=m, show=False),
+                        step_n=2,
+                        post_str=f"_{mcntr}_{clss}.png",
+                    )
 
                     if clss in self.rls["occluding"]:
                         occl = np.logical_or(occl, m)
@@ -108,61 +106,64 @@ class Pipeline:
                 if largest["fn"] == p["fn"]:
                     largest["occluding"] = occl
 
-                if self.log_fp:
-                    if not p["out"]["mask"]:
-                        self.save_log_img(
-                            p["fn"],
-                            p["orig_img"],
-                            step_n=2,
-                            post_str="_no_masks.png",
-                        )
+                if not p["out"]["mask"]:
+                    self.save_log_img(
+                        p["fn"],
+                        p["orig_img"],
+                        step_n=2,
+                        post_str="_no_masks.png",
+                    )
 
             if largest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
             else:
-                if self.log_fp:
-                    self.save_log_img(
-                        largest["fn"],
-                        show_mask(
-                            largest["orig_img"],
-                            p_msk=largest["interest"],
-                            n_msk=largest["occluding"],
-                            show=False,
-                        ),
-                        step_n=3,
-                    )
+                self.save_log_img(
+                    largest["fn"],
+                    show_mask(
+                        largest["orig_img"],
+                        p_msk=largest["interest"],
+                        n_msk=largest["occluding"],
+                        show=False,
+                    ),
+                    step_n=3,
+                )
 
-                print(f"File: {largest['fn']}")
+                # print(f"File: {largest['fn']}")
                 overlap = np.logical_and(
                     largest["interest"], largest["occluding"]
                 ).sum()
-                print(overlap)
-                if overlap == 0:
+
+                if overlap == 1:
                     self.save_log_img(
                         largest["fn"],
                         largest["orig_img"],
                         step_n="F",
                     )
                 else:
+                    img_w = largest["orig_img"].shape[0]
                     column_sum = largest["interest"].sum(axis=0)
                     colums_hit = np.nonzero(column_sum)
-                    # print(colums_hit)
                     left_edge = np.min(colums_hit)
                     right_edge = np.max(colums_hit)
                     mid_point = (right_edge + left_edge) / 2
                     print(f"left_edge: {left_edge}")
                     print(f"right_edge: {right_edge}")
                     print(f"mid_point: {mid_point}")
-                    # print(mid_point)
+
                     # show_mask(
                     #     largest["orig_img"],
                     #     p_msk=largest["interest"],
                     #     n_msk=largest["occluding"],
                     # )
+
                     # https://stackoverflow.com/questions/28417604/plotting-a-line-from-a-coordinate-with-and-angle
                     fig, ax = plt.subplots()
+
+                    # Turns gsv heading into angle from horizontal
+                    # 0->90, 90->0, 180->-90, 270->-180, 360->-270
                     heading = -int(largest["fn"].split("_")[3]) + 90
                     print(f"heading: {heading}")
+
                     # ax.set_xlim(-10, 10)
                     # ax.set_ylim(-10, 10)
                     # print(left_edge / 640 * 90)
@@ -178,57 +179,74 @@ class Pipeline:
                         "Longitude"
                     ].values[0]
                     print(f"CSV lat: {plat} lng: {plng}")
-                    ax.plot(lng, lat, "ro", markersize=20, fillstyle="none")
-                    ax.plot(plng, plat, "bo", markersize=20, fillstyle="none")
+
+                    ax.plot(
+                        lng,
+                        lat,
+                        color="tab:blue",
+                        marker="x",
+                        markersize=20,
+                        fillstyle="none",
+                    )
+                    ax.plot(
+                        plng,
+                        plat,
+                        color="tab:red",
+                        marker="o",
+                        markersize=20,
+                        fillstyle="none",
+                    )
+                    ax.plot(plng, plat, color="tab:red", marker="o", markersize=3)
 
                     # ax.text(0,0, f"{lat} {lng}")
-
-                    nlat, nlng = lat, lng
+                    edge_length = 0.0003
+                    repo_length = 0.0001
                     for angle in [
                         heading - 45,
                         heading + 45,
-                        heading + 45 - left_edge / 640 * 90,
-                        heading + 45 - mid_point / 640 * 90,
-                        heading + 45 - right_edge / 640 * 90,
                     ]:
-                        edge_length = 0.0005
-                        # x, y = 0, 0
                         x, y = lng, lat
                         endx = x + edge_length * math.cos(math.radians(angle))
                         endy = y + edge_length * math.sin(math.radians(angle))
-                        ax.plot([x, endx], [y, endy])
+                        ax.plot([x, endx], [y, endy], "tab:blue")
 
+                    for angle in [
+                        heading + 45 - left_edge / img_w * 90,
+                        heading + 45 - mid_point / img_w * 90,
+                        heading + 45 - right_edge / img_w * 90,
+                    ]:
+                        x, y = lng, lat
+                        endx = x + edge_length * math.cos(math.radians(angle))
+                        endy = y + edge_length * math.sin(math.radians(angle))
+                        ax.plot(
+                            [x, endx],
+                            [y, endy],
+                            "tab:red",
+                            linewidth=0.5,
+                            linestyle="--",
+                        )
+
+                    nlat, nlng = lat, lng
                     strat = "ortho"
+                    adj_angl = 0
                     if strat == "backup":
-                        for angle in [heading - 180 + 45 - mid_point / 640 * 90]:
-                            repo_length = 0.0005
-                            # x, y = 0, 0
-                            x, y = lng, lat
-                            endx = x + repo_length * math.cos(math.radians(angle))
-                            endy = y + repo_length * math.sin(math.radians(angle))
-                            nlat, nlng = endy, endx
-                            ax.plot([x, endx], [y, endy])
-                            ax.plot(
-                                endx,
-                                endy,
-                                "bx",
-                                markersize=20,
-                            )
+                        adj_angl = heading - 180 + 45 - mid_point / img_w * 90
                     if strat == "ortho":
-                        for angle in [heading - 90 + 45 - mid_point / 640 * 90]:
-                            repo_length = 0.0005
-                            # x, y = 0, 0
-                            x, y = lng, lat
-                            endx = x + repo_length * math.cos(math.radians(angle))
-                            endy = y + repo_length * math.sin(math.radians(angle))
-                            nlat, nlng = endy, endx
-                            ax.plot([x, endx], [y, endy])
-                            ax.plot(
-                                endx,
-                                endy,
-                                "bx",
-                                markersize=20,
-                            )
+                        adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
+                    for angle in [adj_angl]:
+                        x, y = lng, lat
+                        endx = x + repo_length * math.cos(math.radians(angle))
+                        endy = y + repo_length * math.sin(math.radians(angle))
+                        nlat, nlng = endy, endx
+                        ax.plot([x, endx], [y, endy], "tab:brown")
+                        ax.plot(
+                            endx,
+                            endy,
+                            color="tab:brown",
+                            marker="x",
+                            markersize=20,
+                            fillstyle="none",
+                        )
 
                     dlat = plat - nlat
                     dlng = plng - nlng
@@ -246,8 +264,41 @@ class Pipeline:
 
                     clat = new_pic["metadata"]["location"]["lat"]
                     clng = new_pic["metadata"]["location"]["lng"]
-                    ax.plot(clng, clat, "rx", markersize=20, fillstyle="none")
+                    ax.plot(
+                        clng,
+                        clat,
+                        color="tab:cyan",
+                        marker="x",
+                        markersize=20,
+                        fillstyle="none",
+                    )
 
+                    dlat = plat - clat
+                    dlng = plng - clng
+                    est_heading = int(
+                        (-math.degrees(math.atan2(dlat, dlng)) + 90) % 360
+                    )
+
+                    new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
+
+                    self.save_log_img(
+                        new_pic["fn"],
+                        new_pic["img"],
+                        step_n=5,
+                    )
+
+                    est_heading = -est_heading + 90
+
+                    for angle in [
+                        est_heading - 45,
+                        est_heading + 45,
+                    ]:
+                        x, y = clng, clat
+                        endx = x + edge_length * math.cos(math.radians(angle))
+                        endy = y + edge_length * math.sin(math.radians(angle))
+                        ax.plot([x, endx], [y, endy], "tab:cyan")
+
+                    plt.axis("equal")
                     self.save_log_img(
                         largest["fn"],
                         fig,
