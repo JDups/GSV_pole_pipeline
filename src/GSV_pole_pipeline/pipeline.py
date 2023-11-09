@@ -40,6 +40,8 @@ class Pipeline:
         if self.log_fp:
             os.makedirs(self.log_fp, exist_ok=True)
             self.lder.log_fp = self.log_fp
+            self.fig, self.ax = plt.subplots()
+            plt.axis("equal")
 
     def save_log_img(self, fn, img, step_n, post_str=""):
         if self.log_fp:
@@ -53,40 +55,39 @@ class Pipeline:
             elif isinstance(img, matplotlib.figure.Figure):
                 plt.savefig(fn)
 
-    def __draw_target(self, ax, lng, lat, color="tab:red", t_type="location"):
-        if t_type == "object":
-            ax.plot(
-                lng,
-                lat,
-                color=color,
-                marker="o",
-                markersize=20,
-                fillstyle="none",
-            )
-            ax.plot(lng, lat, color=color, marker="o", markersize=3)
-        if t_type == "location":
-            ax.plot(lng, lat, color=color, marker="x", markersize=20)
+    def __draw_target(self, lng, lat, color="tab:red"):
+        self.ax.plot(
+            lng,
+            lat,
+            color=color,
+            marker="o",
+            markersize=20,
+            fillstyle="none",
+        )
+        self.ax.plot(lng, lat, color=color, marker="o", markersize=3)
+
+    def __draw_cross(self, lng, lat, color="tab:red"):
+        self.ax.plot(lng, lat, color=color, marker="x", markersize=20)
 
     def run(self, iterations=None):
         for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
             pid = 12390
             print(f"\nPole ID: {pid}")
 
-            fig, ax = plt.subplots()
-            plt.axis("equal")
+            plt.cla()
 
             plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
                 ["Latitude", "Longitude"]
             ].values[0]
             print(f"CSV lat: {plat} lng: {plng}")
-            self.__draw_target(ax, plng, plat, t_type="object")
+            self.__draw_target(plng, plat)
 
             batch = self.lder.get_batch(pid)
 
             lat = batch[0]["metadata"]["location"]["lat"]
             lng = batch[0]["metadata"]["location"]["lng"]
             print(f"GSV lat: {lat} lng: {lng}")
-            self.__draw_target(ax, lng, lat, "tab:blue")
+            self.__draw_cross(lng, lat, "tab:blue")
 
             preds = self.pder.predict(batch)
 
@@ -179,12 +180,12 @@ class Pipeline:
                     angle = heading + angle
                     endx = lng + view_len * math.cos(math.radians(angle))
                     endy = lat + view_len * math.sin(math.radians(angle))
-                    ax.plot([lng, endx], [lat, endy], "tab:blue")
+                    self.ax.plot([lng, endx], [lat, endy], "tab:blue")
                 for angle in [left_edge, mid_point, right_edge]:
                     angle = heading + 45 - angle / img_w * 90
                     endx = lng + view_len * math.cos(math.radians(angle))
                     endy = lat + view_len * math.sin(math.radians(angle))
-                    ax.plot(
+                    self.ax.plot(
                         [lng, endx],
                         [lat, endy],
                         "tab:red",
@@ -207,8 +208,8 @@ class Pipeline:
                     endx = lng + repo_len * math.cos(math.radians(adj_angl))
                     endy = lat + repo_len * math.sin(math.radians(adj_angl))
                     nlat, nlng = endy, endx
-                    ax.plot([lng, endx], [lat, endy], "tab:brown")
-                    self.__draw_target(ax, endx, endy, "tab:brown")
+                    self.ax.plot([lng, endx], [lat, endy], "tab:brown")
+                    self.__draw_cross(endx, endy, "tab:brown")
 
                     dlat = plat - nlat
                     dlng = plng - nlng
@@ -226,7 +227,7 @@ class Pipeline:
 
                     clat = new_pic["metadata"]["location"]["lat"]
                     clng = new_pic["metadata"]["location"]["lng"]
-                    self.__draw_target(ax, clng, clat, "tab:cyan")
+                    self.__draw_cross(clng, clat, "tab:cyan")
 
                     dlat = plat - clat
                     dlng = plng - clng
@@ -248,15 +249,13 @@ class Pipeline:
                         angle = est_heading + angle
                         endx = clng + view_len * math.cos(math.radians(angle))
                         endy = clat + view_len * math.sin(math.radians(angle))
-                        ax.plot([clng, endx], [clat, endy], "tab:cyan")
+                        self.ax.plot([clng, endx], [clat, endy], "tab:cyan")
 
                 self.save_log_img(
                     largest["fn"],
-                    fig,
+                    self.fig,
                     step_n="P",
                 )
-                plt.close(fig)
-                # plt.show()
 
             if pcount + 1 == iterations:
                 break
