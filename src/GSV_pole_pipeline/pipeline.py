@@ -7,7 +7,7 @@ import os
 import cv2
 
 """
-TODO:
+TODO: Marker drawing helper functions/methods
 """
 
 
@@ -53,6 +53,20 @@ class Pipeline:
             elif isinstance(img, matplotlib.figure.Figure):
                 plt.savefig(fn)
 
+    def __draw_target(self, ax, lng, lat, color="tab:red", t_type="location"):
+        if t_type == "object":
+            ax.plot(
+                lng,
+                lat,
+                color=color,
+                marker="o",
+                markersize=20,
+                fillstyle="none",
+            )
+            ax.plot(lng, lat, color=color, marker="o", markersize=3)
+        if t_type == "location":
+            ax.plot(lng, lat, color=color, marker="x", markersize=20)
+
     def run(self, iterations=None):
         for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
             pid = 12390
@@ -65,22 +79,14 @@ class Pipeline:
                 ["Latitude", "Longitude"]
             ].values[0]
             print(f"CSV lat: {plat} lng: {plng}")
-            ax.plot(
-                plng,
-                plat,
-                color="tab:red",
-                marker="o",
-                markersize=20,
-                fillstyle="none",
-            )
-            ax.plot(plng, plat, color="tab:red", marker="o", markersize=3)
+            self.__draw_target(ax, plng, plat, t_type="object")
 
             batch = self.lder.get_batch(pid)
 
             lat = batch[0]["metadata"]["location"]["lat"]
             lng = batch[0]["metadata"]["location"]["lng"]
             print(f"GSV lat: {lat} lng: {lng}")
-            ax.plot(lng, lat, color="tab:blue", marker="x", markersize=20)
+            self.__draw_target(ax, lng, lat, "tab:blue")
 
             preds = self.pder.predict(batch)
 
@@ -202,14 +208,7 @@ class Pipeline:
                     endy = lat + repo_len * math.sin(math.radians(adj_angl))
                     nlat, nlng = endy, endx
                     ax.plot([lng, endx], [lat, endy], "tab:brown")
-                    ax.plot(
-                        endx,
-                        endy,
-                        color="tab:brown",
-                        marker="x",
-                        markersize=20,
-                        fillstyle="none",
-                    )
+                    self.__draw_target(ax, endx, endy, "tab:brown")
 
                     dlat = plat - nlat
                     dlng = plng - nlng
@@ -227,14 +226,7 @@ class Pipeline:
 
                     clat = new_pic["metadata"]["location"]["lat"]
                     clng = new_pic["metadata"]["location"]["lng"]
-                    ax.plot(
-                        clng,
-                        clat,
-                        color="tab:cyan",
-                        marker="x",
-                        markersize=20,
-                        fillstyle="none",
-                    )
+                    self.__draw_target(ax, clng, clat, "tab:cyan")
 
                     dlat = plat - clat
                     dlng = plng - clng

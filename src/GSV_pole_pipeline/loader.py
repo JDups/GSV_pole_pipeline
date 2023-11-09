@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 
 """
 TODO: Add OK status check to GSV API repsonses.
+TODO: Cand reduce total number of API calls in some spots
 TODO: Use Path objects instead of strings for filepaths
 """
 
