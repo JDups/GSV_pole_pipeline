@@ -50,10 +50,16 @@ class Pipeline:
                 + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
             )
 
-            if isinstance(img, np.ndarray):
-                cv2.imwrite(fn, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-            elif isinstance(img, matplotlib.figure.Figure):
-                plt.savefig(fn)
+            cv2.imwrite(fn, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+
+    def save_log_plt(self, fn, step_n, post_str=""):
+        if self.log_fp:
+            fn = (
+                self.log_fp
+                + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
+            )
+
+            plt.savefig(fn)
 
     def __draw_target(self, lng, lat, color="tab:red"):
         self.ax.plot(
@@ -219,11 +225,7 @@ class Pipeline:
 
                     new_pic = self.lder.pic_from_loc(pid, nlat, nlng, est_heading)[0]
 
-                    self.save_log_img(
-                        new_pic["fn"],
-                        new_pic["img"],
-                        step_n=4,
-                    )
+                    self.save_log_img(new_pic["fn"], new_pic["img"], step_n=4)
 
                     clat = new_pic["metadata"]["location"]["lat"]
                     clng = new_pic["metadata"]["location"]["lng"]
@@ -237,11 +239,7 @@ class Pipeline:
 
                     new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
 
-                    self.save_log_img(
-                        new_pic["fn"],
-                        new_pic["img"],
-                        step_n=5,
-                    )
+                    self.save_log_img(new_pic["fn"], new_pic["img"], step_n=5)
 
                     est_heading = -est_heading + 90
 
@@ -251,11 +249,7 @@ class Pipeline:
                         endy = clat + view_len * math.sin(math.radians(angle))
                         self.ax.plot([clng, endx], [clat, endy], "tab:cyan")
 
-                self.save_log_img(
-                    largest["fn"],
-                    self.fig,
-                    step_n="P",
-                )
+                self.save_log_plt(largest["fn"], step_n="P")
 
             if pcount + 1 == iterations:
                 break
