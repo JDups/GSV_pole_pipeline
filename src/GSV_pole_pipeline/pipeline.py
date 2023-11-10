@@ -36,6 +36,7 @@ class Pipeline:
         self.pder = predictor
         self.rls = rules
         self.log_fp = log_fp
+        self.step_n = 0
 
         if self.log_fp:
             os.makedirs(self.log_fp, exist_ok=True)
@@ -43,44 +44,39 @@ class Pipeline:
             self.fig, self.ax = plt.subplots()
             plt.axis("equal")
 
-    def save_log_img(self, fn, img, step_n, post_str=""):
-        if self.log_fp:
-            fn = (
-                self.log_fp
-                + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
-            )
+    def __save_fn(self, fn, step_n, post_str=""):
+        return (
+            self.log_fp
+            + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
+        )
 
+    def __save_log_img(self, fn, img, step_n=self.step_n, post_str=""):
+        if self.log_fp:
+            fn = self.__save_fn(fn, step_n, post_str)
             cv2.imwrite(fn, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
-    def save_log_plt(self, fn, step_n, post_str=""):
+    def __save_log_plt(self, fn, post_str=""):
         if self.log_fp:
-            fn = (
-                self.log_fp
-                + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
-            )
-
+            fn = self.__save_fn(fn, "P", post_str)
             plt.savefig(fn)
 
     def __draw_target(self, lng, lat, color="tab:red"):
-        self.ax.plot(
-            lng,
-            lat,
-            color=color,
-            marker="o",
-            markersize=20,
-            fillstyle="none",
-        )
+        self.ax.plot(lng, lat, color=color, marker="o", markersize=20, fillstyle="none")
         self.ax.plot(lng, lat, color=color, marker="o", markersize=3)
 
     def __draw_cross(self, lng, lat, color="tab:red"):
         self.ax.plot(lng, lat, color=color, marker="x", markersize=20)
 
+    def __run_reset():
+        plt.cla()
+        self.step_n = 0
+
     def run(self, iterations=None):
         for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
-            pid = 12390
+            # pid = 12390
             print(f"\nPole ID: {pid}")
 
-            plt.cla()
+            self.__run_reset()
 
             plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
                 ["Latitude", "Longitude"]
@@ -94,7 +90,10 @@ class Pipeline:
             lng = batch[0]["metadata"]["location"]["lng"]
             print(f"GSV lat: {lat} lng: {lng}")
             self.__draw_cross(lng, lat, "tab:blue")
+            for b in batch:
+                self.__save_log_img(b["fn"], b["img"])
 
+            self.step_n = 1
             preds = self.pder.predict(batch)
 
             # print(preds[0])
@@ -110,17 +109,16 @@ class Pipeline:
             }
 
             for p in preds:
-                self.save_log_img(p["fn"], p["orig_img"], step_n=1)
+                # self.__save_log_img(p["fn"], p["orig_img"], step_n=1)
 
                 occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
                 for mcntr, (clss, m) in enumerate(
                     zip(p["out"]["class"], p["out"]["mask"])
                 ):
-                    self.save_log_img(
+                    self.__save_log_img(
                         p["fn"],
                         show_mask(p["orig_img"], p_msk=m, show=False),
-                        step_n=2,
                         post_str=f"_{mcntr}_{clss}.png",
                     )
 
@@ -140,17 +138,15 @@ class Pipeline:
                     largest["occluding"] = occl
 
                 if not p["out"]["mask"]:
-                    self.save_log_img(
-                        p["fn"],
-                        p["orig_img"],
-                        step_n=2,
-                        post_str="_no_masks.png",
+                    self.__save_log_img(
+                        p["fn"], p["orig_img"], post_str="_no_masks.png"
                     )
 
             if largest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
             else:
-                self.save_log_img(
+                self.step_n = 2
+                self.__save_log_img(
                     largest["fn"],
                     show_mask(
                         largest["orig_img"],
@@ -158,7 +154,6 @@ class Pipeline:
                         n_msk=largest["occluding"],
                         show=False,
                     ),
-                    step_n=3,
                 )
 
                 # print(f"File: {largest['fn']}")
@@ -200,9 +195,10 @@ class Pipeline:
                     )
 
                 if overlap == 1:
-                    self.save_log_img(largest["fn"], largest["orig_img"], step_n="F")
+                    self.__save_log_img(largest["fn"], largest["orig_img"], step_n="F")
 
                 else:
+                    self.step_n = 3
                     nlat, nlng = lat, lng
                     strat = "ortho"
                     adj_angl = 0
@@ -225,7 +221,7 @@ class Pipeline:
 
                     new_pic = self.lder.pic_from_loc(pid, nlat, nlng, est_heading)[0]
 
-                    self.save_log_img(new_pic["fn"], new_pic["img"], step_n=4)
+                    self.__save_log_img(new_pic["fn"], new_pic["img"])
 
                     clat = new_pic["metadata"]["location"]["lat"]
                     clng = new_pic["metadata"]["location"]["lng"]
@@ -236,10 +232,10 @@ class Pipeline:
                     est_heading = int(
                         (-math.degrees(math.atan2(dlat, dlng)) + 90) % 360
                     )
-
+                    self.step_n = 4
                     new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
 
-                    self.save_log_img(new_pic["fn"], new_pic["img"], step_n=5)
+                    self.__save_log_img(new_pic["fn"], new_pic["img"])
 
                     est_heading = -est_heading + 90
 
@@ -249,7 +245,7 @@ class Pipeline:
                         endy = clat + view_len * math.sin(math.radians(angle))
                         self.ax.plot([clng, endx], [clat, endy], "tab:cyan")
 
-                self.save_log_plt(largest["fn"], step_n="P")
+                self.__save_log_plt(largest["fn"])
 
             if pcount + 1 == iterations:
                 break
