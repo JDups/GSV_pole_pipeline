@@ -44,6 +44,11 @@ class Pipeline:
             self.fig, self.ax = plt.subplots()
             plt.axis("equal")
 
+    def __end_coords(self, x, y, a, dist):
+        endx = x + dist * math.cos(math.radians(a))
+        endy = y + dist * math.sin(math.radians(a))
+        return endx, endy
+
     def __save_fn(self, fn, step_n, post_str=""):
         return (
             self.log_fp
@@ -71,8 +76,7 @@ class Pipeline:
 
     def __draw_lines(self, x, y, angles, line_len, **kwargs):
         for a in angles:
-            endx = x + line_len * math.cos(math.radians(a))
-            endy = y + line_len * math.sin(math.radians(a))
+            endx, endy = self.__end_coords(x, y, a, line_len)
             self.ax.plot([x, endx], [y, endy], **kwargs)
 
     def __draw_fov(self, lng, lat, heading, color, view_len=0.0003):
@@ -215,8 +219,7 @@ class Pipeline:
                         adj_angl = heading - 180 + 45 - mid_point / img_w * 90
                     if strat == "ortho":
                         adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
-                    endx = lng + repo_len * math.cos(math.radians(adj_angl))
-                    endy = lat + repo_len * math.sin(math.radians(adj_angl))
+                    endx, endy = self.__end_coords(lng, lat, adj_angl, repo_len)
                     nlat, nlng = endy, endx
 
                     self.ax.plot([lng, endx], [lat, endy], "tab:brown")
