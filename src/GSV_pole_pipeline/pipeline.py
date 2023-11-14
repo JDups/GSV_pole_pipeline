@@ -7,7 +7,7 @@ import os
 import cv2
 
 """
-TODO: FOV drawing helper functions/methods
+TODO: heading calc method
 """
 
 
@@ -48,6 +48,11 @@ class Pipeline:
         endx = x + dist * math.cos(math.radians(a))
         endy = y + dist * math.sin(math.radians(a))
         return endx, endy
+
+    def __est_heading(self, x, y, endx, endy):
+        dx = endx - x
+        dy = endy - y
+        return int((-math.degrees(math.atan2(dy, dx)) + 90) % 360)
 
     def __save_fn(self, fn, step_n, post_str=""):
         return (
@@ -223,11 +228,7 @@ class Pipeline:
                     self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
                     self.__draw_cross(nlng, nlat, "tab:brown")
 
-                    dlat = plat - nlat
-                    dlng = plng - nlng
-                    est_heading = int(
-                        (-math.degrees(math.atan2(dlat, dlng)) + 90) % 360
-                    )
+                    est_heading = self.__est_heading(nlng, nlat, plng, plat)
 
                     _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
 
@@ -236,11 +237,7 @@ class Pipeline:
 
                     self.__draw_cross(clng, clat, "tab:cyan")
 
-                    dlat = plat - clat
-                    dlng = plng - clng
-                    est_heading = int(
-                        (-math.degrees(math.atan2(dlat, dlng)) + 90) % 360
-                    )
+                    est_heading = self.__est_heading(clng, clat, plng, plat)
 
                     self.curr_step = 4
                     new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
