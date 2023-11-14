@@ -7,7 +7,7 @@ import os
 import cv2
 
 """
-TODO: Marker drawing helper functions/methods
+TODO: FOV drawing helper functions/methods
 """
 
 
@@ -36,7 +36,7 @@ class Pipeline:
         self.pder = predictor
         self.rls = rules
         self.log_fp = log_fp
-        self.step_n = 0
+        self.curr_step = 0
 
         if self.log_fp:
             os.makedirs(self.log_fp, exist_ok=True)
@@ -50,7 +50,9 @@ class Pipeline:
             + f"p{fn.split('_')[1]}_s{step_n}_h{fn.split('_')[3]}{post_str}.png"
         )
 
-    def __save_log_img(self, fn, img, step_n=self.step_n, post_str=""):
+    def __save_log_img(self, fn, img, step_n=None, post_str=""):
+        if step_n == None:
+            step_n = self.curr_step
         if self.log_fp:
             fn = self.__save_fn(fn, step_n, post_str)
             cv2.imwrite(fn, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
@@ -67,16 +69,15 @@ class Pipeline:
     def __draw_cross(self, lng, lat, color="tab:red"):
         self.ax.plot(lng, lat, color=color, marker="x", markersize=20)
 
-    def __run_reset():
+    def __run_reset(self):
         plt.cla()
-        self.step_n = 0
+        self.curr_step = 0
 
     def run(self, iterations=None):
         for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
-            # pid = 12390
-            print(f"\nPole ID: {pid}")
-
             self.__run_reset()
+            pid = 12390
+            print(f"\nPole ID: {pid}")
 
             plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
                 ["Latitude", "Longitude"]
@@ -93,7 +94,7 @@ class Pipeline:
             for b in batch:
                 self.__save_log_img(b["fn"], b["img"])
 
-            self.step_n = 1
+            self.curr_step = 1
             preds = self.pder.predict(batch)
 
             # print(preds[0])
@@ -145,7 +146,7 @@ class Pipeline:
             if largest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
             else:
-                self.step_n = 2
+                self.curr_step = 2
                 self.__save_log_img(
                     largest["fn"],
                     show_mask(
@@ -198,7 +199,7 @@ class Pipeline:
                     self.__save_log_img(largest["fn"], largest["orig_img"], step_n="F")
 
                 else:
-                    self.step_n = 3
+                    self.curr_step = 3
                     nlat, nlng = lat, lng
                     strat = "ortho"
                     adj_angl = 0
@@ -219,12 +220,11 @@ class Pipeline:
                         (-math.degrees(math.atan2(dlat, dlng)) + 90) % 360
                     )
 
-                    new_pic = self.lder.pic_from_loc(pid, nlat, nlng, est_heading)[0]
+                    _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
 
-                    self.__save_log_img(new_pic["fn"], new_pic["img"])
+                    clat = new_loc.metadata[0]["location"]["lat"]
+                    clng = new_loc.metadata[0]["location"]["lng"]
 
-                    clat = new_pic["metadata"]["location"]["lat"]
-                    clng = new_pic["metadata"]["location"]["lng"]
                     self.__draw_cross(clng, clat, "tab:cyan")
 
                     dlat = plat - clat
@@ -232,7 +232,7 @@ class Pipeline:
                     est_heading = int(
                         (-math.degrees(math.atan2(dlat, dlng)) + 90) % 360
                     )
-                    self.step_n = 4
+                    self.curr_step = 4
                     new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
 
                     self.__save_log_img(new_pic["fn"], new_pic["img"])

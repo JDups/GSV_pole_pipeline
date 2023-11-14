@@ -89,13 +89,16 @@ class GSVFetch(Loader):
             "source": "outdoor",
         }
 
-    def pic_from_loc(self, idn, lat, lng, heading=None):
+    def results_from_loc(self, lat, lng, heading=None):
         apiargs = self.api_defaults.copy()
         apiargs["location"] = f"{lat},{lng}"
         apiargs["heading"] = str(heading)
 
         api_list = gsv.helpers.api_list(apiargs)
-        api_results = gsv.api.results(api_list)
+        return api_list, gsv.api.results(api_list)
+
+    def pic_from_loc(self, idn, lat, lng, heading=None):
+        api_list, api_results = self.results_from_loc(lat, lng, heading)
         if self.log_fp:
             api_results.save_links(self.log_fp + "links.txt")
             api_results.save_metadata(self.log_fp + "metadata.json")
