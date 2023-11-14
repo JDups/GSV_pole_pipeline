@@ -69,12 +69,23 @@ class Pipeline:
     def __draw_cross(self, lng, lat, color="tab:red"):
         self.ax.plot(lng, lat, color=color, marker="x", markersize=20)
 
+    def __draw_lines(self, x, y, angles, line_len, **kwargs):
+        for a in angles:
+            endx = x + line_len * math.cos(math.radians(a))
+            endy = y + line_len * math.sin(math.radians(a))
+            self.ax.plot([x, endx], [y, endy], **kwargs)
+
     def __draw_fov(self, lng, lat, heading, color, view_len=0.0003):
-        for angle in [-45, 45]:
-            angle = heading + angle
-            endx = lng + view_len * math.cos(math.radians(angle))
-            endy = lat + view_len * math.sin(math.radians(angle))
-            self.ax.plot([lng, endx], [lat, endy], color)
+        kwargs = {"color": color}
+        angles = [heading - 45, heading + 45]
+        self.__draw_lines(lng, lat, angles, view_len, **kwargs)
+
+    def __draw_obj_span(
+        self, lng, lat, heading, edges, color="tab:red", view_len=0.0003
+    ):
+        kwargs = {"color": color, "linewidth": 0.5, "linestyle": "--"}
+        angles = [heading + 45 - a for a in edges]
+        self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __run_reset(self):
         plt.cla()
@@ -169,17 +180,6 @@ class Pipeline:
                     largest["interest"], largest["occluding"]
                 ).sum()
 
-                img_w = largest["orig_img"].shape[0]
-                column_sum = largest["interest"].sum(axis=0)
-                colums_hit = np.nonzero(column_sum)
-                left_edge = np.min(colums_hit)
-                right_edge = np.max(colums_hit)
-                mid_point = (right_edge + left_edge) / 2
-                print(f"left_edge: {left_edge}")
-                print(f"right_edge: {right_edge}")
-                print(f"mid_point: {mid_point}")
-                view_len = 0.0003
-
                 # Turns gsv heading into angle from horizontal
                 # 0->90, 90->0, 180->-90, 270->-180, 360->-270
                 heading = -int(largest["fn"].split("_")[3]) + 90
@@ -187,17 +187,20 @@ class Pipeline:
 
                 self.__draw_fov(lng, lat, heading, "tab:blue")
 
-                for angle in [left_edge, mid_point, right_edge]:
-                    angle = heading + 45 - angle / img_w * 90
-                    endx = lng + view_len * math.cos(math.radians(angle))
-                    endy = lat + view_len * math.sin(math.radians(angle))
-                    self.ax.plot(
-                        [lng, endx],
-                        [lat, endy],
-                        "tab:red",
-                        linewidth=0.5,
-                        linestyle="--",
-                    )
+                img_w = largest["orig_img"].shape[0]
+                column_sum = largest["interest"].sum(axis=0)
+                colums_hit = np.nonzero(column_sum)
+                left_edge = np.min(colums_hit)
+                right_edge = np.max(colums_hit)
+                mid_point = (right_edge + left_edge) / 2
+                edges_angles = [
+                    edge / img_w * 90 for edge in [left_edge, mid_point, right_edge]
+                ]
+                print(f"left_edge: {left_edge}")
+                print(f"right_edge: {right_edge}")
+                print(f"mid_point: {mid_point}")
+
+                self.__draw_obj_span(lng, lat, heading, edges_angles)
 
                 if overlap == 1:
                     self.__save_log_img(largest["fn"], largest["orig_img"], step_n="F")
@@ -215,6 +218,7 @@ class Pipeline:
                     endx = lng + repo_len * math.cos(math.radians(adj_angl))
                     endy = lat + repo_len * math.sin(math.radians(adj_angl))
                     nlat, nlng = endy, endx
+
                     self.ax.plot([lng, endx], [lat, endy], "tab:brown")
                     self.__draw_cross(endx, endy, "tab:brown")
 
@@ -236,6 +240,7 @@ class Pipeline:
                     est_heading = int(
                         (-math.degrees(math.atan2(dlat, dlng)) + 90) % 360
                     )
+
                     self.curr_step = 4
                     new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
 
