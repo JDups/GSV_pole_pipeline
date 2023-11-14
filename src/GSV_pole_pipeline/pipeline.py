@@ -69,6 +69,13 @@ class Pipeline:
     def __draw_cross(self, lng, lat, color="tab:red"):
         self.ax.plot(lng, lat, color=color, marker="x", markersize=20)
 
+    def __draw_fov(self, lng, lat, heading, color, view_len=0.0003):
+        for angle in [-45, 45]:
+            angle = heading + angle
+            endx = lng + view_len * math.cos(math.radians(angle))
+            endy = lat + view_len * math.sin(math.radians(angle))
+            self.ax.plot([lng, endx], [lat, endy], color)
+
     def __run_reset(self):
         plt.cla()
         self.curr_step = 0
@@ -178,11 +185,8 @@ class Pipeline:
                 heading = -int(largest["fn"].split("_")[3]) + 90
                 print(f"heading: {heading}")
 
-                for angle in [-45, 45]:
-                    angle = heading + angle
-                    endx = lng + view_len * math.cos(math.radians(angle))
-                    endy = lat + view_len * math.sin(math.radians(angle))
-                    self.ax.plot([lng, endx], [lat, endy], "tab:blue")
+                self.__draw_fov(lng, lat, heading, "tab:blue")
+
                 for angle in [left_edge, mid_point, right_edge]:
                     angle = heading + 45 - angle / img_w * 90
                     endx = lng + view_len * math.cos(math.radians(angle))
@@ -239,11 +243,7 @@ class Pipeline:
 
                     est_heading = -est_heading + 90
 
-                    for angle in [-45, 45]:
-                        angle = est_heading + angle
-                        endx = clng + view_len * math.cos(math.radians(angle))
-                        endy = clat + view_len * math.sin(math.radians(angle))
-                        self.ax.plot([clng, endx], [clat, endy], "tab:cyan")
+                    self.__draw_fov(clng, clat, est_heading, "tab:cyan")
 
                 self.__save_log_plt(largest["fn"])
 
