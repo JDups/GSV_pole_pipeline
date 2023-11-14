@@ -211,7 +211,6 @@ class Pipeline:
 
                 else:
                     self.curr_step = 3
-                    nlat, nlng = lat, lng
                     strat = "ortho"
                     adj_angl = 0
                     repo_len = 0.0001
@@ -219,11 +218,10 @@ class Pipeline:
                         adj_angl = heading - 180 + 45 - mid_point / img_w * 90
                     if strat == "ortho":
                         adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
-                    endx, endy = self.__end_coords(lng, lat, adj_angl, repo_len)
-                    nlat, nlng = endy, endx
+                    nlng, nlat = self.__end_coords(lng, lat, adj_angl, repo_len)
 
-                    self.ax.plot([lng, endx], [lat, endy], "tab:brown")
-                    self.__draw_cross(endx, endy, "tab:brown")
+                    self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
+                    self.__draw_cross(nlng, nlat, "tab:brown")
 
                     dlat = plat - nlat
                     dlng = plng - nlng
