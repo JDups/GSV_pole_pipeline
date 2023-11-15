@@ -11,6 +11,7 @@ from io import BytesIO
 import numpy as np
 import math
 from abc import ABC, abstractmethod
+from utils import get_est_heading
 
 """
 TODO: Add OK status check to GSV API repsonses.
@@ -106,9 +107,7 @@ class GSVFetch(Loader):
 
         rlat = api_results.metadata[0]["location"]["lat"]  # real Latitude
         rlng = api_results.metadata[0]["location"]["lng"]  # real Longitude
-        dlat = lat - rlat
-        dlng = lng - rlng
-        est_heading = int((-math.degrees(math.atan2(dlat, dlng)) + 90) % 360)
+        est_heading = get_est_heading(rlng, rlat, lng, lat)
 
         if not heading:
             api_list[0]["heading"] = est_heading

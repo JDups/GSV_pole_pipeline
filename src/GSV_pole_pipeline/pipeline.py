@@ -1,5 +1,5 @@
 import numpy as np
-from utils import show_mask, get_overlay
+from utils import show_mask, get_overlay, get_end_coords, get_est_heading
 import matplotlib
 import matplotlib.pyplot as plt
 import math
@@ -7,7 +7,7 @@ import os
 import cv2
 
 """
-TODO: heading calc method
+TODO:
 """
 
 
@@ -44,16 +44,6 @@ class Pipeline:
             self.fig, self.ax = plt.subplots()
             plt.axis("equal")
 
-    def __end_coords(self, x, y, a, dist):
-        endx = x + dist * math.cos(math.radians(a))
-        endy = y + dist * math.sin(math.radians(a))
-        return endx, endy
-
-    def __est_heading(self, x, y, endx, endy):
-        dx = endx - x
-        dy = endy - y
-        return int((-math.degrees(math.atan2(dy, dx)) + 90) % 360)
-
     def __save_fn(self, fn, step_n, post_str=""):
         return (
             self.log_fp
@@ -81,7 +71,7 @@ class Pipeline:
 
     def __draw_lines(self, x, y, angles, line_len, **kwargs):
         for a in angles:
-            endx, endy = self.__end_coords(x, y, a, line_len)
+            endx, endy = get_end_coords(x, y, a, line_len)
             self.ax.plot([x, endx], [y, endy], **kwargs)
 
     def __draw_fov(self, lng, lat, heading, color, view_len=0.0003):
@@ -223,12 +213,12 @@ class Pipeline:
                         adj_angl = heading - 180 + 45 - mid_point / img_w * 90
                     if strat == "ortho":
                         adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
-                    nlng, nlat = self.__end_coords(lng, lat, adj_angl, repo_len)
+                    nlng, nlat = get_end_coords(lng, lat, adj_angl, repo_len)
 
                     self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
                     self.__draw_cross(nlng, nlat, "tab:brown")
 
-                    est_heading = self.__est_heading(nlng, nlat, plng, plat)
+                    est_heading = get_est_heading(nlng, nlat, plng, plat)
 
                     _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
 
@@ -237,7 +227,7 @@ class Pipeline:
 
                     self.__draw_cross(clng, clat, "tab:cyan")
 
-                    est_heading = self.__est_heading(clng, clat, plng, plat)
+                    est_heading = get_est_heading(clng, clat, plng, plat)
 
                     self.curr_step = 4
                     new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]

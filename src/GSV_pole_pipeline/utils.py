@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 
 
 def get_pole_id_from_filename(filename_series):
@@ -37,3 +38,15 @@ def get_overlay(msk, color):
     overlay[msk] = color
     overlay[:, :, 3] = 0
     return (overlay[:, :, :-1] * 255).astype(np.uint8)
+
+
+def get_end_coords(x, y, a, dist):
+    endx = x + dist * math.cos(math.radians(a))
+    endy = y + dist * math.sin(math.radians(a))
+    return endx, endy
+
+
+def get_est_heading(x, y, endx, endy):
+    dx = endx - x
+    dy = endy - y
+    return int((-math.degrees(math.atan2(dy, dx)) + 90) % 360)
