@@ -94,7 +94,8 @@ class Pipeline:
     def run(self, iterations=None):
         for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
             self.__run_reset()
-            pid = 12390
+            # pid = 12390 # random good one
+            # pid = 9633 # bad status, will loop forever if continue not changed to break
             print(f"\nPole ID: {pid}")
 
             plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
@@ -104,6 +105,10 @@ class Pipeline:
             self.__draw_target(plng, plat)
 
             batch = self.lder.get_batch(pid)
+
+            if not batch:
+                print("No response")
+                continue 
 
             lat = batch[0]["metadata"]["location"]["lat"]
             lng = batch[0]["metadata"]["location"]["lng"]
@@ -128,8 +133,6 @@ class Pipeline:
             }
 
             for p in preds:
-                # self.__save_log_img(p["fn"], p["orig_img"], step_n=1)
-
                 occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
                 for mcntr, (clss, m) in enumerate(
@@ -202,7 +205,7 @@ class Pipeline:
 
                 self.__draw_obj_span(lng, lat, heading, edges_angles)
 
-                if overlap == 1:
+                if overlap == 0:
                     self.__save_log_img(largest["fn"], largest["orig_img"], step_n="F")
 
                 else:
@@ -233,12 +236,13 @@ class Pipeline:
                     self.curr_step = 4
                     new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
 
-                    self.__save_log_img(new_pic["fn"], new_pic["img"])
+                    self.__save_log_img(new_pic["fn"], new_pic["img"], step_n="F")
 
                     est_heading = -est_heading + 90
 
                     self.__draw_fov(clng, clat, est_heading, "tab:cyan")
 
+            if largest["fn"]:
                 self.__save_log_plt(largest["fn"])
 
             if pcount + 1 == iterations:

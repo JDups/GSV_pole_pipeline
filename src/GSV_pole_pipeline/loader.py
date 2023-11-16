@@ -16,7 +16,7 @@ import os
 import pickle
 
 """
-TODO: Add OK status check to GSV API repsonses.
+TODO: Add OK status check to GSV API repsonses. I kinda added a check but it's jank
 TODO: Cand reduce total number of API calls in some spots
 TODO: Use Path objects instead of strings for filepaths
 """
@@ -143,6 +143,9 @@ class GSVFetch(Loader):
         #     api_results.save_links(self.log_fp + "links.txt")
         #     api_results.save_metadata(self.log_fp + "metadata.json")
         # print(api_results.metadata)
+
+        if api_results.metadata[0]["status"] != "OK":
+            return None
 
         rlat = api_results.metadata[0]["location"]["lat"]  # real Latitude
         rlng = api_results.metadata[0]["location"]["lng"]  # real Longitude
