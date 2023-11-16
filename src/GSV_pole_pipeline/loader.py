@@ -12,6 +12,8 @@ import numpy as np
 import math
 from abc import ABC, abstractmethod
 from utils import get_est_heading
+import os
+import pickle
 
 """
 TODO: Add OK status check to GSV API repsonses.
@@ -90,19 +92,56 @@ class GSVFetch(Loader):
             "source": "outdoor",
         }
 
+    def set_log_fp(self, fp):
+        self.log_fp = fp
+        self.cache_loc = self.log_fp + "saved_queries\\"
+        os.makedirs(self.cache_loc, exist_ok=True)
+        try:
+            with open(self.cache_loc + "saved_queries.pkl", "rb") as f:
+                self.saved_queries = pickle.load(f)
+        except:
+            self.saved_queries = {}
+        try:
+            with open(self.cache_loc + "saved_imgs.pkl", "rb") as f:
+                self.saved_imgs = pickle.load(f)
+        except:
+            self.saved_imgs = {}
+
     def results_from_loc(self, lat, lng, heading=None):
         apiargs = self.api_defaults.copy()
         apiargs["location"] = f"{lat},{lng}"
         apiargs["heading"] = str(heading)
 
         api_list = gsv.helpers.api_list(apiargs)
-        return api_list, gsv.api.results(api_list)
+
+        if str(api_list) in self.saved_queries:
+            api_results = self.saved_queries[str(api_list)]
+        else:
+            api_results = gsv.api.results(api_list)
+            self.saved_queries[str(api_list)] = api_results
+            with open(self.cache_loc + "saved_queries.pkl", "wb") as f:
+                pickle.dump(self.saved_queries, f)
+
+        return api_list, api_results
+
+    def image_from_GSV(self, link):
+        img = np.array(Image.open(BytesIO(requests.get(link).content)))
+
+        if link in self.saved_imgs:
+            api_results = self.saved_imgs[link]
+        else:
+            img = np.array(Image.open(BytesIO(requests.get(link).content)))
+            self.saved_imgs[link] = img
+            with open(self.cache_loc + "saved_imgs.pkl", "wb") as f:
+                pickle.dump(self.saved_imgs, f)
+
+        return img
 
     def pic_from_loc(self, idn, lat, lng, heading=None):
         api_list, api_results = self.results_from_loc(lat, lng, heading)
-        if self.log_fp:
-            api_results.save_links(self.log_fp + "links.txt")
-            api_results.save_metadata(self.log_fp + "metadata.json")
+        # if self.log_fp:
+        #     api_results.save_links(self.log_fp + "links.txt")
+        #     api_results.save_metadata(self.log_fp + "metadata.json")
         # print(api_results.metadata)
 
         rlat = api_results.metadata[0]["location"]["lat"]  # real Latitude
@@ -120,7 +159,8 @@ class GSVFetch(Loader):
         return [
             self.output_dict(
                 fn=fn,
-                img=np.array(Image.open(BytesIO(requests.get(link).content))),
+                # img=np.array(Image.open(BytesIO(requests.get(link).content))),
+                img=self.image_from_GSV(link),
                 mtdt=mtdt,
             )
             for link, fn, mtdt in zip(api_results.links, fn, api_results.metadata)
