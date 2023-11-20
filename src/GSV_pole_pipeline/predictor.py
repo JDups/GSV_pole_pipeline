@@ -114,6 +114,11 @@ class YOLOPredictor(Predictor):
             return []
 
     def predict(self, images):
+        preds = []
+        for i in images:
+            result = self.model.predict(i["img"])[0]
+            preds.append({"fn": i["fn"], "result": result})
+
         return [
             self.output_dict(
                 fn=img["fn"],
@@ -124,10 +129,7 @@ class YOLOPredictor(Predictor):
                 img=img["result"].orig_img,
                 full=img["result"],
             )
-            for img in [
-                {"fn": i["fn"], "result": self.model.predict(i["img"])[0]}
-                for i in images
-            ]
+            for img in preds
         ]
 
 

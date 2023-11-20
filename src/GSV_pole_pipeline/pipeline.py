@@ -96,7 +96,8 @@ class Pipeline:
             self.__run_reset()
             # pid = 12390 # random good one
             # pid = 9633 # bad status, will loop forever if continue not changed to break
-            print(f"\nPole ID: {pid}")
+            pid = 2569
+            print(f"\nPole counte: {pcount}, Pole ID: {pid}")
 
             plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
                 ["Latitude", "Longitude"]
@@ -108,7 +109,7 @@ class Pipeline:
 
             if not batch:
                 print("No response")
-                continue 
+                continue
 
             lat = batch[0]["metadata"]["location"]["lat"]
             lng = batch[0]["metadata"]["location"]["lng"]
