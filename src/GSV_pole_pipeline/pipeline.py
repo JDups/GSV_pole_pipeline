@@ -1,5 +1,5 @@
 import numpy as np
-from utils import show_mask, get_overlay, get_end_coords, get_est_heading
+import utils
 import matplotlib
 import matplotlib.pyplot as plt
 import math
@@ -14,7 +14,7 @@ TODO:
 def show_masks_indiv(preds, rules):
     for p in preds:
         print(f"Image: {p['fn']}")
-        show_mask(p["orig_img"])
+        utils.show_mask(p["orig_img"])
 
         if not p["out"]["mask"]:
             print("No masks for image")
@@ -25,9 +25,9 @@ def show_masks_indiv(preds, rules):
             print(f"Prediction class: {prd_cls}")
             print(f"Mask area: {m.sum()}")
             if prd_cls in rules["interest"]:
-                show_mask(p["orig_img"], p_msk=m)
+                utils.show_mask(p["orig_img"], p_msk=m)
             if prd_cls in rules["occluding"]:
-                show_mask(p["orig_img"], n_msk=m)
+                utils.show_mask(p["orig_img"], n_msk=m)
 
 
 class Pipeline:
@@ -72,7 +72,7 @@ class Pipeline:
 
     def __draw_lines(self, x, y, angles, line_len, **kwargs):
         for a in angles:
-            endx, endy = get_end_coords(x, y, a, line_len)
+            endx, endy = utils.get_end_coords(x, y, a, line_len)
             self.ax.plot([x, endx], [y, endy], **kwargs)
 
     def __draw_fov(self, lng, lat, heading, color, view_len=0.0003):
@@ -141,7 +141,7 @@ class Pipeline:
                 ):
                     self.__save_log_img(
                         p["fn"],
-                        show_mask(p["orig_img"], p_msk=m, show=False),
+                        utils.show_mask(p["orig_img"], p_msk=m, show=False),
                         post_str=f"_{mcntr}_{clss}.png",
                     )
 
@@ -171,7 +171,7 @@ class Pipeline:
                 self.curr_step = 2
                 self.__save_log_img(
                     largest["fn"],
-                    show_mask(
+                    utils.show_mask(
                         largest["orig_img"],
                         p_msk=largest["interest"],
                         n_msk=largest["occluding"],
@@ -218,12 +218,12 @@ class Pipeline:
                         adj_angl = heading - 180 + 45 - mid_point / img_w * 90
                     if strat == "ortho":
                         adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
-                    nlng, nlat = get_end_coords(lng, lat, adj_angl, repo_len)
+                    nlng, nlat = utils.get_end_coords(lng, lat, adj_angl, repo_len)
 
                     self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
                     self.__draw_cross(nlng, nlat, "tab:brown")
 
-                    est_heading = get_est_heading(nlng, nlat, plng, plat)
+                    est_heading = utils.get_est_heading(nlng, nlat, plng, plat)
 
                     _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
 
@@ -232,7 +232,7 @@ class Pipeline:
 
                     self.__draw_cross(clng, clat, "tab:cyan")
 
-                    est_heading = get_est_heading(clng, clat, plng, plat)
+                    est_heading = utils.get_est_heading(clng, clat, plng, plat)
 
                     self.curr_step = 4
                     new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
