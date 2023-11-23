@@ -11,12 +11,13 @@ from io import BytesIO
 import numpy as np
 import math
 from abc import ABC, abstractmethod
-import utils
+from utils import get_est_heading
 import os
 import pickle
 
 """
 TODO: Add OK status check to GSV API repsonses. I kinda added a check but it's jank
+TODO: Cand reduce total number of API calls in some spots
 TODO: Use Path objects instead of strings for filepaths
 """
 
@@ -115,8 +116,6 @@ class GSVFetch(Loader):
 
         if str(api_list) in self.saved_queries:
             api_results = self.saved_queries[str(api_list)]
-            print("~~~~~ test ~~~~~")
-            print(test)
         else:
             api_results = gsv.api.results(api_list)
             self.saved_queries[str(api_list)] = api_results
@@ -150,7 +149,7 @@ class GSVFetch(Loader):
 
         rlat = api_results.metadata[0]["location"]["lat"]  # real Latitude
         rlng = api_results.metadata[0]["location"]["lng"]  # real Longitude
-        est_heading = utils.get_est_heading(rlng, rlat, lng, lat)
+        est_heading = get_est_heading(rlng, rlat, lng, lat)
 
         if not heading:
             api_list[0]["heading"] = est_heading
