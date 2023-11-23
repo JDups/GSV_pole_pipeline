@@ -145,6 +145,8 @@ class GSVFetch(Loader):
         # print(api_results.metadata)
 
         if api_results.metadata[0]["status"] != "OK":
+            with open(self.log_fp + f"p{idn}_sN", "w") as f:
+                f.write(api_results.metadata[0]["status"])
             return None
 
         rlat = api_results.metadata[0]["location"]["lat"]  # real Latitude
