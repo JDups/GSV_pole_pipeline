@@ -94,7 +94,7 @@ class GSVFetch(Loader):
 
     def set_log_fp(self, fp):
         self.log_fp = fp
-        self.cache_loc = self.log_fp + "saved_queries\\"
+        self.cache_loc = self.log_fp + "saved_queries" + os.sep
         os.makedirs(self.cache_loc, exist_ok=True)
         try:
             with open(self.cache_loc + "saved_queries.pkl", "rb") as f:
