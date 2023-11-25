@@ -104,8 +104,10 @@ class MockPredictor(Predictor):
 
 
 class YOLOPredictor(Predictor):
-    def __init__(self, weights_fp):
+    def __init__(self, weights_fp, device=None, conf=0.25):
         self.model = YOLO(weights_fp)
+        self.device = device
+        self.conf = conf
 
     def __get_mask_list(self, result):
         if result.masks:
@@ -116,7 +118,9 @@ class YOLOPredictor(Predictor):
     def predict(self, images):
         preds = []
         for i in images:
-            result = self.model.predict(i["img"])[0]
+            result = self.model.predict(i["img"], device=self.device, conf=self.conf)[0]
+            print([result.names[c.item()] for c in result.boxes.cls])
+            print(result.boxes.conf)
             preds.append({"fn": i["fn"], "result": result})
 
         return [
