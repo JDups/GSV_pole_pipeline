@@ -64,28 +64,35 @@ class Pipeline:
             plt.savefig(fn)
 
     def __draw_target(self, lng, lat, color="tab:red"):
-        self.ax.plot(lng, lat, color=color, marker="o", markersize=20, fillstyle="none")
-        self.ax.plot(lng, lat, color=color, marker="o", markersize=3)
+        if self.log_fp:
+            self.ax.plot(
+                lng, lat, color=color, marker="o", markersize=20, fillstyle="none"
+            )
+            self.ax.plot(lng, lat, color=color, marker="o", markersize=3)
 
     def __draw_cross(self, lng, lat, color="tab:red"):
-        self.ax.plot(lng, lat, color=color, marker="x", markersize=20)
+        if self.log_fp:
+            self.ax.plot(lng, lat, color=color, marker="x", markersize=20)
 
     def __draw_lines(self, x, y, angles, line_len, **kwargs):
-        for a in angles:
-            endx, endy = get_end_coords(x, y, a, line_len)
-            self.ax.plot([x, endx], [y, endy], **kwargs)
+        if self.log_fp:
+            for a in angles:
+                endx, endy = get_end_coords(x, y, a, line_len)
+                self.ax.plot([x, endx], [y, endy], **kwargs)
 
     def __draw_fov(self, lng, lat, heading, color, view_len=0.0003):
-        kwargs = {"color": color}
-        angles = [heading - 45, heading + 45]
-        self.__draw_lines(lng, lat, angles, view_len, **kwargs)
+        if self.log_fp:
+            kwargs = {"color": color}
+            angles = [heading - 45, heading + 45]
+            self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __draw_obj_span(
         self, lng, lat, heading, edges, color="tab:red", view_len=0.0003
     ):
-        kwargs = {"color": color, "linewidth": 0.5, "linestyle": "--"}
-        angles = [heading + 45 - a for a in edges]
-        self.__draw_lines(lng, lat, angles, view_len, **kwargs)
+        if self.log_fp:
+            kwargs = {"color": color, "linewidth": 0.5, "linestyle": "--"}
+            angles = [heading + 45 - a for a in edges]
+            self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __run_reset(self):
         plt.cla()

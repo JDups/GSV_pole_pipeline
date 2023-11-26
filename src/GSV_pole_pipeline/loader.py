@@ -84,6 +84,9 @@ class GSVFetch(Loader):
         self.data_df = pd.read_csv(csv_file)
         self.API_key = API_key
         self.full_360 = full_360
+        self.log_fp = None
+        self.saved_queries = {}
+        self.saved_imgs = {}
         self.api_defaults = {
             "size": "640x640",
             "fov": "90",
@@ -107,6 +110,18 @@ class GSVFetch(Loader):
         except:
             self.saved_imgs = {}
 
+    def __save_response(self, api_list, api_results):
+        if self.log_fp:
+            self.saved_queries[str(api_list)] = api_results
+            with open(self.cache_loc + "saved_queries.pkl", "wb") as f:
+                pickle.dump(self.saved_queries, f)
+
+    def __save_image(self, link, img):
+        if self.log_fp:
+            self.saved_imgs[link] = img
+            with open(self.cache_loc + "saved_imgs.pkl", "wb") as f:
+                pickle.dump(self.saved_imgs, f)
+
     def results_from_loc(self, lat, lng, heading=None):
         apiargs = self.api_defaults.copy()
         apiargs["location"] = f"{lat},{lng}"
@@ -118,21 +133,17 @@ class GSVFetch(Loader):
             api_results = self.saved_queries[str(api_list)]
         else:
             api_results = gsv.api.results(api_list)
-            self.saved_queries[str(api_list)] = api_results
-            with open(self.cache_loc + "saved_queries.pkl", "wb") as f:
-                pickle.dump(self.saved_queries, f)
+            self.__save_response(api_list, api_results)
 
         return api_list, api_results
 
     def image_from_GSV(self, link):
         if link in self.saved_imgs:
             api_results = self.saved_imgs[link]
-            img = self.saved_imgs[link] 
+            img = self.saved_imgs[link]
         else:
             img = np.array(Image.open(BytesIO(requests.get(link).content)))
-            self.saved_imgs[link] = img
-            with open(self.cache_loc + "saved_imgs.pkl", "wb") as f:
-                pickle.dump(self.saved_imgs, f)
+            self.__save_image(link, img)
 
         return img
 
