@@ -226,11 +226,10 @@ class GroundedSAMPredictor(Predictor):
         return np.array(result_masks)
 
     def __get_prompt_class(self, prompts, class_id):
-        pred_prompts = [prompts[pi] for pi in class_id]
         pred_class = []
-        for p in pred_prompts:
+        for pi in class_id:
             for c in self.class_prompts:
-                if p in self.class_prompts[c]:
+                if prompts[pi] in self.class_prompts[c]:
                     pred_class.append(c)
         return pred_class
 
