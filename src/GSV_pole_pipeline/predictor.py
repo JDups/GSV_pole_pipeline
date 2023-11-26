@@ -248,11 +248,8 @@ class GroundedSAMPredictor(Predictor):
                 box_threshold=self.box_thresh,
                 text_threshold=self.text_thresh,
             )
-            print(prompts)
-            print(detections.class_id)
             detections = detections[detections.class_id != None]
             detections.mask = self.segment(image=i["img"], xyxy=detections.xyxy)
-            print(self.__get_prompt_class(prompts, detections.class_id))
             preds.append(
                 {
                     "fn": i["fn"],
