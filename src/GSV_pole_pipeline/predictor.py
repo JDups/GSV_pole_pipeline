@@ -227,7 +227,6 @@ class GroundedSAMPredictor(Predictor):
 
     def __get_prompt_class(self, prompts, class_id):
         pred_prompts = [prompts[pi] for pi in class_id]
-        print(pred_prompts)
         pred_class = []
         for p in pred_prompts:
             for c in self.class_prompts:
