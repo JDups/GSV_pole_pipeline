@@ -7,7 +7,9 @@ import os
 import cv2
 
 """
-TODO:
+TODO: Fix plotting in jupyter notebooks
+TODO: Add plotting for when no detection of interest is made
+TADO: Make target selection into method
 """
 
 

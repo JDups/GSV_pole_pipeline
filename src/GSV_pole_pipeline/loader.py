@@ -16,8 +16,7 @@ import os
 import pickle
 
 """
-TODO: Add OK status check to GSV API repsonses. I kinda added a check but it's jank
-TODO: Use Path objects instead of strings for filepaths
+TODO:
 """
 
 
@@ -43,14 +42,11 @@ class ImgFetch(Loader):
     def __init__(self, directory=None):
         super().__init__()
         self.directory = directory
-        self.dir_div = "/"
 
         if self.directory:
             self.add_directory(self.directory)
 
     def add_directory(self, directory):
-        if "\\" in self.directory:
-            self.dir_div = "\\"
         fl_tp = [f"*.{f}" for f in ImgFetch.__supported_image_formats]
 
         pole_imgs = []
@@ -58,7 +54,7 @@ class ImgFetch(Loader):
             pole_imgs.extend(glob(directory + fl))
 
         self.data_df = pd.DataFrame({"img_fp": pole_imgs})
-        self.data_df["img_fn"] = self.data_df["img_fp"].str.split(self.dir_div).str[-1]
+        self.data_df["img_fn"] = self.data_df["img_fp"].str.split(os.sep).str[-1]
         self.data_df["pole_id"] = self.data_df["img_fn"].str.split("_").str[1]
 
     def get_batch(self, idn):
@@ -152,7 +148,9 @@ class GSVFetch(Loader):
 
         if api_results.metadata[0]["status"] != "OK":
             with open(self.log_fp + f"p{idn}_sN", "w") as f:
-                print(f"\nStreet View request failed. Reponse: {api_results.metadata[0]['status']}\n")
+                print(
+                    f"\nStreet View request failed. Reponse: {api_results.metadata[0]['status']}\n"
+                )
                 f.write(api_results.metadata[0]["status"])
             return None
 
