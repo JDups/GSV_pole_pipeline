@@ -203,9 +203,7 @@ class GSVFetch(Loader):
 
     def get_batch(self, idn):
         row = self.data_df[self.data_df["pole_id"] == idn]
-        # lat = row["Latitude"].values[0]
-        # lng = row["Longitude"].values[0]
-        lat, lng = row[["Latitude","Longitude"]].values[0]
+        lat, lng = row[["Latitude", "Longitude"]].values[0]
         print(f"Lat: {lat}  Long: {lng}")
 
         if self.full_360:
