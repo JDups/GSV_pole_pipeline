@@ -105,7 +105,7 @@ class GSVFetch(Loader):
         obj_id = self.obj_ids[self.obj_n]
         self.obj_n += 1
 
-        return self.obj_n - 1, obj_id, self.get_batch(obj_id)
+        return obj_id, self.get_batch(obj_id)
 
     def set_log_fp(self, fp):
         self.log_fp = fp

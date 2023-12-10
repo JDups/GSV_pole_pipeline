@@ -100,8 +100,7 @@ class Pipeline:
         self.curr_step = 0
 
     def run(self, iterations=None):
-        # for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
-        for pcount, pid, batch in self.lder:
+        for pcount, (pid, batch) in enumerate(self.lder):
             self.__run_reset()
             # pid = 12390  # random good one
             # pid = 9633 # bad status
