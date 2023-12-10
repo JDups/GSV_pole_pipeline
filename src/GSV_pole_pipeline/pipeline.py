@@ -113,9 +113,6 @@ class Pipeline:
             print(f"CSV lat: {plat} lng: {plng}")
             self.__draw_target(plng, plat)
 
-            # batch = self.lder.get_batch(pid)
-            print(batch)
-
             if not batch:
                 print("No response")
                 continue
