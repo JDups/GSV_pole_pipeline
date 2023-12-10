@@ -74,11 +74,15 @@ class ImgFetch(Loader):
 
 
 class GSVFetch(Loader):
-    def __init__(self, csv_file, API_key, full_360=False):
+    def __init__(self, csv_file, API_key, obj_ids=None, full_360=False):
         super().__init__()
         self.data_df = pd.read_csv(csv_file)
         self.API_key = API_key
         self.full_360 = full_360
+        if obj_ids:
+            self.obj_ids = np.array(obj_ids)
+        else:
+            self.obj_ids = self.data_df["pole_id"].unique()
         self.log_fp = None
         self.saved_queries = {}
         self.saved_imgs = {}
@@ -89,6 +93,19 @@ class GSVFetch(Loader):
             "key": self.API_key,
             "source": "outdoor",
         }
+
+    def __iter__(self):
+        self.obj_n = 0
+        return self
+
+    def __next__(self):
+        if self.obj_n == len(self.obj_ids):
+            raise StopIteration
+
+        obj_id = self.obj_ids[self.obj_n]
+        self.obj_n += 1
+
+        return self.obj_n - 1, obj_id, self.get_batch(obj_id)
 
     def set_log_fp(self, fp):
         self.log_fp = fp
