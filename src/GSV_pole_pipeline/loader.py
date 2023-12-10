@@ -22,7 +22,7 @@ TODO:
 
 class Loader(ABC):
     def __init__(self):
-        self.log_fp = ""
+        self.log_fp = None
 
     @abstractmethod
     def get_batch(self, idn):
@@ -83,7 +83,6 @@ class GSVFetch(Loader):
             self.obj_ids = np.array(obj_ids)
         else:
             self.obj_ids = self.data_df["pole_id"].unique()
-        self.log_fp = None
         self.saved_queries = {}
         self.saved_imgs = {}
         self.api_defaults = {
