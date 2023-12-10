@@ -42,7 +42,6 @@ class Pipeline:
 
         if self.log_fp:
             os.makedirs(self.log_fp, exist_ok=True)
-            # self.lder.log_fp = self.log_fp
             self.lder.set_log_fp(self.log_fp)
             self.fig, self.ax = plt.subplots()
             plt.axis("equal")
