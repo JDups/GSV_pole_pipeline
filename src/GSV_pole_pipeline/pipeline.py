@@ -103,8 +103,8 @@ class Pipeline:
         # for pcount, pid in enumerate(self.lder.data_df["pole_id"].unique()):
         for pcount, pid, batch in self.lder:
             self.__run_reset()
-            pid = 12390  # random good one
-            # pid = 9633 # bad status, will loop forever if continue not changed to break
+            # pid = 12390  # random good one
+            # pid = 9633 # bad status
             # pid = 2569  # blurring on pole
             print(f"\nPole count: {pcount}, Pole ID: {pid}")
 
