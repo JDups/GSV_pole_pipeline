@@ -28,6 +28,9 @@ class Loader(ABC):
     def get_batch(self, idn):
         pass
 
+    def set_log_fp(self, fp):
+        self.log_fp = fp
+
     def output_dict(self, fn=None, img=None, mtdt=None):
         return {
             "fn": fn,
@@ -107,7 +110,7 @@ class GSVFetch(Loader):
         return obj_id, self.get_batch(obj_id)
 
     def set_log_fp(self, fp):
-        self.log_fp = fp
+        super().set_log_fp(fp)
         self.cache_loc = self.log_fp + "saved_queries" + os.sep
         os.makedirs(self.cache_loc, exist_ok=True)
         try:
