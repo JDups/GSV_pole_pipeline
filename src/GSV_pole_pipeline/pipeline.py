@@ -107,9 +107,10 @@ class Pipeline:
             # pid = 2569  # blurring on pole
             print(f"\nPole count: {pcount}, Pole ID: {pid}")
 
-            plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
-                ["Latitude", "Longitude"]
-            ].values[0]
+            # plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
+            #     ["Latitude", "Longitude"]
+            # ].values[0]
+            plat, plng = self.lder.fetch_latlng(pid)
             print(f"CSV lat: {plat} lng: {plng}")
             self.__draw_target(plng, plat)
 

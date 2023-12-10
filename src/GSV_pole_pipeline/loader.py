@@ -38,18 +38,21 @@ class Loader(ABC):
             "metadata": mtdt,
         }
 
+    def fetch_latlng(self, pid):
+        return self.data_df[self.data_df["pole_id"] == pid][
+            ["Latitude", "Longitude"]
+        ].values[0]
+
 
 class ImgFetch(Loader):
     __supported_image_formats = ["png", "jpg"]
 
-    def __init__(self, directory=None):
+    def __init__(self, directory):
         super().__init__()
+        self.set_directory(self.directory)
+
+    def set_directory(self, directory):
         self.directory = directory
-
-        if self.directory:
-            self.add_directory(self.directory)
-
-    def add_directory(self, directory):
         fl_tp = [f"*.{f}" for f in ImgFetch.__supported_image_formats]
 
         pole_imgs = []
