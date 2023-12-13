@@ -9,7 +9,12 @@ import cv2
 """
 TODO: Fix plotting in jupyter notebooks
 TODO: Add plotting for when no detection of interest is made
-TADO: Make target selection into method
+TODO: Make target selection into method
+TODO: Loader and pipeline should be merged into same objects.
+      The pipeline logic ends up depending on the loader anyways.
+
+TODO: Make the drawfov method take an argument for the actual fov
+      Then keep trying to fit the Dashcam loader in
 """
 
 
@@ -107,9 +112,6 @@ class Pipeline:
             # pid = 2569  # blurring on pole
             print(f"\nPole count: {pcount}, Pole ID: {pid}")
 
-            # plat, plng = self.lder.data_df[self.lder.data_df["pole_id"] == pid][
-            #     ["Latitude", "Longitude"]
-            # ].values[0]
             plat, plng = self.lder.fetch_latlng(pid)
             print(f"CSV lat: {plat} lng: {plng}")
             self.__draw_target(plng, plat)
@@ -186,6 +188,7 @@ class Pipeline:
                     ),
                 )
 
+
                 # print(f"File: {largest['fn']}")
                 overlap = np.logical_and(
                     largest["interest"], largest["occluding"]
@@ -198,14 +201,17 @@ class Pipeline:
 
                 self.__draw_fov(lng, lat, heading, "tab:blue")
 
-                img_w = largest["orig_img"].shape[0]
+                img_w = largest["orig_img"].shape[1]
                 column_sum = largest["interest"].sum(axis=0)
                 colums_hit = np.nonzero(column_sum)
+                print(largest["interest"].shape)
+                print(len(largest["orig_img"][0]))
+                print(column_sum.shape)
                 left_edge = np.min(colums_hit)
                 right_edge = np.max(colums_hit)
                 mid_point = (right_edge + left_edge) / 2
                 edges_angles = [
-                    edge / img_w * 90 for edge in [left_edge, mid_point, right_edge]
+                    edge / img_w * 140 for edge in [left_edge, mid_point, right_edge]
                 ]
                 print(f"left_edge: {left_edge}")
                 print(f"right_edge: {right_edge}")
@@ -217,38 +223,42 @@ class Pipeline:
                     self.__save_log_img(largest["fn"], largest["orig_img"], step_n="F")
 
                 else:
-                    self.curr_step = 3
-                    strat = "ortho"
-                    adj_angl = 0
-                    repo_len = 0.0001
-                    if strat == "backup":
-                        adj_angl = heading - 180 + 45 - mid_point / img_w * 90
-                    if strat == "ortho":
-                        adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
-                    nlng, nlat = get_end_coords(lng, lat, adj_angl, repo_len)
+                    if self.lder.source == "GSV":
+                        self.curr_step = 3
+                        strat = "ortho"
+                        adj_angl = 0
+                        repo_len = 0.0001
+                        if strat == "backup":
+                            adj_angl = heading - 180 + 45 - mid_point / img_w * 90
+                        if strat == "ortho":
+                            adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
+                        nlng, nlat = get_end_coords(lng, lat, adj_angl, repo_len)
 
-                    self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
-                    self.__draw_cross(nlng, nlat, "tab:brown")
+                        self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
+                        self.__draw_cross(nlng, nlat, "tab:brown")
 
-                    est_heading = get_est_heading(nlng, nlat, plng, plat)
+                        est_heading = get_est_heading(nlng, nlat, plng, plat)
 
-                    _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
+                        _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
 
-                    clat = new_loc.metadata[0]["location"]["lat"]
-                    clng = new_loc.metadata[0]["location"]["lng"]
+                        clat = new_loc.metadata[0]["location"]["lat"]
+                        clng = new_loc.metadata[0]["location"]["lng"]
 
-                    self.__draw_cross(clng, clat, "tab:cyan")
+                        self.__draw_cross(clng, clat, "tab:cyan")
 
-                    est_heading = get_est_heading(clng, clat, plng, plat)
+                        est_heading = get_est_heading(clng, clat, plng, plat)
 
-                    self.curr_step = 4
-                    new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
+                        self.curr_step = 4
+                        new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
 
-                    self.__save_log_img(new_pic["fn"], new_pic["img"], step_n="F")
+                        self.__save_log_img(new_pic["fn"], new_pic["img"], step_n="F")
 
-                    est_heading = -est_heading + 90
+                        est_heading = -est_heading + 90
 
-                    self.__draw_fov(clng, clat, est_heading, "tab:cyan")
+                        self.__draw_fov(clng, clat, est_heading, "tab:cyan")
+
+                    if self.lder.source == "Dashcam":
+                        pass
 
             if largest["fn"]:
                 self.__save_log_plt(largest["fn"])

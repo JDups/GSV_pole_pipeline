@@ -120,7 +120,7 @@ class YOLOPredictor(Predictor):
     def predict(self, images):
         preds = []
         for i in images:
-            result = self.model.predict(i["img"], device=self.device, conf=self.conf)[0]
+            result = self.model.predict(i["img"], device=self.device, conf=self.conf, imgsz=(i["img"].shape[0],i["img"].shape[1]))[0]
             print([result.names[c.item()] for c in result.boxes.cls])
             print(result.boxes.conf)
             preds.append({"fn": i["fn"], "result": result})
