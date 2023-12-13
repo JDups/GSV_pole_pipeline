@@ -297,7 +297,7 @@ class DCamFetch(Loader):
         dy = endy - y
         # return (-math.degrees(math.atan2(dy, dx)) + 90) % 360
         return math.degrees(math.atan2(dy, dx)) % 360
-    
+
     def pic_from_track(self, idn, track, frame_pnt):
         row = self.tracks_df[
             (self.tracks_df["Filename"] == track)
@@ -378,8 +378,5 @@ class DCamFetch(Loader):
 
             if found:
                 return self.pic_from_track(idn, track, frame_pnt)
-        
-        return None
-            
-        
 
+        return None

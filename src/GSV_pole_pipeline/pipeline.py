@@ -97,7 +97,7 @@ class Pipeline:
     ):
         if self.log_fp:
             kwargs = {"color": color, "linewidth": 0.5, "linestyle": "--"}
-            angles = [heading + fov/2 - a for a in edges]
+            angles = [heading + fov / 2 - a for a in edges]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __run_reset(self):
