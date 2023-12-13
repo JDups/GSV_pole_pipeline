@@ -86,18 +86,18 @@ class Pipeline:
                 endx, endy = get_end_coords(x, y, a, line_len)
                 self.ax.plot([x, endx], [y, endy], **kwargs)
 
-    def __draw_fov(self, lng, lat, heading, color, fov=90, view_len=0.0003):
+    def __draw_fov(self, lng, lat, heading, fov=90, color="tab:blue", view_len=0.0003):
         if self.log_fp:
             kwargs = {"color": color}
             angles = [heading - fov / 2, heading + fov / 2]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __draw_obj_span(
-        self, lng, lat, heading, edges, color="tab:red", view_len=0.0003
+        self, lng, lat, heading, edges, fov=90, color="tab:red", view_len=0.0003
     ):
         if self.log_fp:
             kwargs = {"color": color, "linewidth": 0.5, "linestyle": "--"}
-            angles = [heading + 45 - a for a in edges]
+            angles = [heading + fov/2 - a for a in edges]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __run_reset(self):
@@ -203,7 +203,7 @@ class Pipeline:
                 else:
                     fov = 90
 
-                self.__draw_fov(lng, lat, heading, fov=fov, color="tab:blue")
+                self.__draw_fov(lng, lat, heading, fov, color="tab:blue")
 
                 img_w = largest["orig_img"].shape[1]
                 column_sum = largest["interest"].sum(axis=0)
@@ -214,11 +214,15 @@ class Pipeline:
                 edges_angles = [
                     edge / img_w * fov for edge in [left_edge, mid_point, right_edge]
                 ]
+                print(img_w)
                 print(f"left_edge: {left_edge}")
+                print(left_edge / img_w * fov)
                 print(f"right_edge: {right_edge}")
+                print(right_edge / img_w * fov)
                 print(f"mid_point: {mid_point}")
+                print(mid_point / img_w * fov)
 
-                self.__draw_obj_span(lng, lat, heading, edges_angles)
+                self.__draw_obj_span(lng, lat, heading, edges_angles, fov)
 
                 if overlap == 0:
                     self.__save_log_img(largest["fn"], largest["orig_img"], step_n="F")
