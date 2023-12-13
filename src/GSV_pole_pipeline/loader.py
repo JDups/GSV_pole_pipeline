@@ -297,6 +297,28 @@ class DCamFetch(Loader):
         dy = endy - y
         # return (-math.degrees(math.atan2(dy, dx)) + 90) % 360
         return math.degrees(math.atan2(dy, dx)) % 360
+    
+    def pic_from_track(self, idn, track, frame_pnt):
+        row = self.tracks_df[
+            (self.tracks_df["Filename"] == track)
+            & (self.tracks_df["Point"] == frame_pnt)
+        ]
+        img_path = row["img_path"].values[0]
+        print(img_path)
+        image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+        return [
+            self.output_dict(
+                fn=f"im_{idn}__{int(row['Bearing_New'])% 360}",
+                img=image,
+                mtdt={
+                    "entry": row,
+                    "location": {
+                        "lat": row["Latitude(Deg)"].values[0],
+                        "lng": row["Longitude(Deg)"].values[0],
+                    },
+                },
+            )
+        ]
 
     def get_batch(self, idn):
         lat, lng = self.fetch_latlng(idn)
@@ -355,25 +377,9 @@ class DCamFetch(Loader):
                 frame_pnt -= 1
 
             if found:
-                row = self.tracks_df[
-                    (self.tracks_df["Filename"] == track)
-                    & (self.tracks_df["Point"] == frame_pnt)
-                ]
-                img_path = row["img_path"].values[0]
-                print(img_path)
-                image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
-                break
+                return self.pic_from_track(idn, track, frame_pnt)
+        
+        return None
+            
+        
 
-        return [
-            self.output_dict(
-                fn=f"im_{idn}__{int(row['Bearing_New'])% 360}",
-                img=image,
-                mtdt={
-                    "entry": row,
-                    "location": {
-                        "lat": row["Latitude(Deg)"].values[0],
-                        "lng": row["Longitude(Deg)"].values[0],
-                    },
-                },
-            )
-        ]
