@@ -329,11 +329,11 @@ class DCamFetch(Loader):
         print(close_tracks)
 
         for track in close_tracks:
-            not_found = True
+            found = False
             frame_pnt = close_tracks[track][0]
             color = "tab:orange"
             max_idx = len(self.tracks_df[self.tracks_df["Filename"] == track].index) - 1
-            while not_found:
+            while not found:
                 row = self.tracks_df[
                     (self.tracks_df["Filename"] == track)
                     & (self.tracks_df["Point"] == frame_pnt)
@@ -346,7 +346,7 @@ class DCamFetch(Loader):
                 )
                 angles = [-row["Bearing_New"] + 90 - 70, -row["Bearing_New"] + 90 + 70]
                 if angles[0] < head < angles[1]:
-                    not_found = False
+                    found = True
                     break
                 if dist > 0.001:
                     break
@@ -354,7 +354,7 @@ class DCamFetch(Loader):
                     break
                 frame_pnt -= 1
 
-            if not not_found:
+            if found:
                 row = self.tracks_df[
                     (self.tracks_df["Filename"] == track)
                     & (self.tracks_df["Point"] == frame_pnt)
