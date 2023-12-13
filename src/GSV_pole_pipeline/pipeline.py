@@ -86,10 +86,10 @@ class Pipeline:
                 endx, endy = get_end_coords(x, y, a, line_len)
                 self.ax.plot([x, endx], [y, endy], **kwargs)
 
-    def __draw_fov(self, lng, lat, heading, color, view_len=0.0003):
+    def __draw_fov(self, lng, lat, heading, color, fov=90, view_len=0.0003):
         if self.log_fp:
             kwargs = {"color": color}
-            angles = [heading - 45, heading + 45]
+            angles = [heading - fov / 2, heading + fov / 2]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __draw_obj_span(
@@ -198,19 +198,21 @@ class Pipeline:
                 heading = -int(largest["fn"].split("_")[3]) + 90
                 print(f"heading: {heading}")
 
-                self.__draw_fov(lng, lat, heading, "tab:blue")
+                if self.lder.source == "Dashcam":
+                    fov = 140
+                else:
+                    fov = 90
+
+                self.__draw_fov(lng, lat, heading, fov=fov, color="tab:blue")
 
                 img_w = largest["orig_img"].shape[1]
                 column_sum = largest["interest"].sum(axis=0)
                 colums_hit = np.nonzero(column_sum)
-                print(largest["interest"].shape)
-                print(len(largest["orig_img"][0]))
-                print(column_sum.shape)
                 left_edge = np.min(colums_hit)
                 right_edge = np.max(colums_hit)
                 mid_point = (right_edge + left_edge) / 2
                 edges_angles = [
-                    edge / img_w * 140 for edge in [left_edge, mid_point, right_edge]
+                    edge / img_w * fov for edge in [left_edge, mid_point, right_edge]
                 ]
                 print(f"left_edge: {left_edge}")
                 print(f"right_edge: {right_edge}")
