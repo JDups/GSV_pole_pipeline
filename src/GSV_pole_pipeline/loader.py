@@ -304,11 +304,11 @@ class DCamFetch(Loader):
             & (self.tracks_df["Point"] == frame_pnt)
         ]
         img_path = row["img_path"].values[0]
-        print(img_path)
         image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+
         return [
             self.output_dict(
-                fn=f"im_{idn}__{int(row['Bearing_New'])% 360}",
+                fn=f"im_{idn}__{int(row['Bearing_New'].iloc[0])% 360}",
                 img=image,
                 mtdt={
                     "entry": row,
