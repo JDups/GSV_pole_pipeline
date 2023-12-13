@@ -245,49 +245,52 @@ class DCamFetch(Loader):
         return obj_id, self.get_batch(obj_id)
 
     def fetch_latlng(self, pid):
-        return self.data_df[self.data_df["OBJECTID"] == pid][
-            ["Lat", "Long"]
-        ].values[0]
+        return self.data_df[self.data_df["OBJECTID"] == pid][["Lat", "Long"]].values[0]
 
     def load_gps_csv(self, file_path, pics_folder):
         df = pd.read_csv(file_path)
 
-        df = df.drop('Unnamed: 11', axis=1)
+        df = df.drop("Unnamed: 11", axis=1)
         df.columns = df.columns.str.strip()
 
-        df['Point'] = df['Point'] - 1
+        df["Point"] = df["Point"] - 1
 
-        df['Bearing_New'] = df['Bearing(Deg)']
+        df["Bearing_New"] = df["Bearing(Deg)"]
 
         min_speed = 7
-        idx = df.index[df['Speed(mph)']<min_speed]
-        idx = np.split(idx, np.where(np.diff(idx) != 1)[0]+1)
+        idx = df.index[df["Speed(mph)"] < min_speed]
+        idx = np.split(idx, np.where(np.diff(idx) != 1)[0] + 1)
 
         started_parked = False
 
         for run in idx:
             if run[0]:
-                idx_last = run[0]-1
-                bearing_last = df.iloc[idx_last]['Bearing(Deg)']
-                df.loc[run, 'Bearing_New'] = bearing_last
+                idx_last = run[0] - 1
+                bearing_last = df.iloc[idx_last]["Bearing(Deg)"]
+                df.loc[run, "Bearing_New"] = bearing_last
             else:
                 started_parked = True
-                idx_next = run[-1]+1
-                bearing_next = df.iloc[idx_next]['Bearing(Deg)']
-                df.loc[run, 'Bearing_New'] = bearing_next
+                idx_next = run[-1] + 1
+                bearing_next = df.iloc[idx_next]["Bearing(Deg)"]
+                df.loc[run, "Bearing_New"] = bearing_next
 
         if not started_parked:
-            df.loc[0, 'Bearing_New'] = df.loc[1, 'Bearing_New']
+            df.loc[0, "Bearing_New"] = df.loc[1, "Bearing_New"]
 
-        df['img_path'] = pics_folder + df['Filename'].str.split('.').str[0] + '\\frame' + df['Point'].astype(str) + '.jpg'
+        df["img_path"] = (
+            pics_folder
+            + df["Filename"].str.split(".").str[0]
+            + "\\frame"
+            + df["Point"].astype(str)
+            + ".jpg"
+        )
 
         return df
 
     def get_distance(self, x, y, endx, endy):
         dx = endx - x
         dy = endy - y
-        return (dx**2 + dy**2)**(1/2)
-
+        return (dx**2 + dy**2) ** (1 / 2)
 
     def get_est_heading(self, x, y, endx, endy):
         dx = endx - x
@@ -302,35 +305,46 @@ class DCamFetch(Loader):
 
         find_marg = 0.001
 
-        df_close = self.tracks_df[(lng - find_marg < self.tracks_df['Longitude(Deg)']) & 
-                      (self.tracks_df['Longitude(Deg)'] < lng + find_marg) & 
-                      (self.tracks_df['Latitude(Deg)'] < lat + find_marg) & 
-                      (lat - find_marg < self.tracks_df['Latitude(Deg)'])]
+        df_close = self.tracks_df[
+            (lng - find_marg < self.tracks_df["Longitude(Deg)"])
+            & (self.tracks_df["Longitude(Deg)"] < lng + find_marg)
+            & (self.tracks_df["Latitude(Deg)"] < lat + find_marg)
+            & (lat - find_marg < self.tracks_df["Latitude(Deg)"])
+        ]
 
-        for track in df_close['Filename'].unique():
+        for track in df_close["Filename"].unique():
             # print(track)
-            track_df = df_close[df_close['Filename'] == track]
+            track_df = df_close[df_close["Filename"] == track]
 
             close_tracks[track] = None
             for i, row in track_df.iterrows():
-                dist = self.get_distance(row['Longitude(Deg)'], row['Latitude(Deg)'], lng, lat)
+                dist = self.get_distance(
+                    row["Longitude(Deg)"], row["Latitude(Deg)"], lng, lat
+                )
                 if not close_tracks[track]:
-                    close_tracks[track] = [row['Point'], dist]
+                    close_tracks[track] = [row["Point"], dist]
                 elif dist < close_tracks[track][1]:
-                    close_tracks[track] = [row['Point'], dist]
+                    close_tracks[track] = [row["Point"], dist]
 
         print(close_tracks)
 
         for track in close_tracks:
             not_found = True
             frame_pnt = close_tracks[track][0]
-            color = 'tab:orange'
-            max_idx = len(self.tracks_df[self.tracks_df['Filename']==track].index) - 1
-            while(not_found):
-                row = self.tracks_df[(self.tracks_df['Filename']==track)& (self.tracks_df['Point']==frame_pnt)].iloc[0]
-                dist = self.get_distance(row['Longitude(Deg)'], row['Latitude(Deg)'], lng, lat)
-                head = self.get_est_heading(row['Longitude(Deg)'], row['Latitude(Deg)'], lng, lat)
-                angles = [-row['Bearing_New']+90 - 70, -row['Bearing_New']+90 + 70]
+            color = "tab:orange"
+            max_idx = len(self.tracks_df[self.tracks_df["Filename"] == track].index) - 1
+            while not_found:
+                row = self.tracks_df[
+                    (self.tracks_df["Filename"] == track)
+                    & (self.tracks_df["Point"] == frame_pnt)
+                ].iloc[0]
+                dist = self.get_distance(
+                    row["Longitude(Deg)"], row["Latitude(Deg)"], lng, lat
+                )
+                head = self.get_est_heading(
+                    row["Longitude(Deg)"], row["Latitude(Deg)"], lng, lat
+                )
+                angles = [-row["Bearing_New"] + 90 - 70, -row["Bearing_New"] + 90 + 70]
                 if angles[0] < head < angles[1]:
                     not_found = False
                     break
@@ -341,8 +355,11 @@ class DCamFetch(Loader):
                 frame_pnt -= 1
 
             if not not_found:
-                row = self.tracks_df[(self.tracks_df['Filename']==track) & (self.tracks_df['Point']==frame_pnt)]
-                img_path = row['img_path'].values[0]
+                row = self.tracks_df[
+                    (self.tracks_df["Filename"] == track)
+                    & (self.tracks_df["Point"] == frame_pnt)
+                ]
+                img_path = row["img_path"].values[0]
                 print(img_path)
                 image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
                 break
@@ -351,6 +368,12 @@ class DCamFetch(Loader):
             self.output_dict(
                 fn=f"im_{idn}__{int(row['Bearing_New'])% 360}",
                 img=image,
-                mtdt={"entry": row, "location":{"lat":row['Latitude(Deg)'].values[0], "lng": row['Longitude(Deg)'].values[0]}}
+                mtdt={
+                    "entry": row,
+                    "location": {
+                        "lat": row["Latitude(Deg)"].values[0],
+                        "lng": row["Longitude(Deg)"].values[0],
+                    },
+                },
             )
         ]

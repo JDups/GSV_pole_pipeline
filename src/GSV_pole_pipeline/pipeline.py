@@ -188,7 +188,6 @@ class Pipeline:
                     ),
                 )
 
-
                 # print(f"File: {largest['fn']}")
                 overlap = np.logical_and(
                     largest["interest"], largest["occluding"]
@@ -249,7 +248,9 @@ class Pipeline:
                         est_heading = get_est_heading(clng, clat, plng, plat)
 
                         self.curr_step = 4
-                        new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
+                        new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[
+                            0
+                        ]
 
                         self.__save_log_img(new_pic["fn"], new_pic["img"], step_n="F")
 
