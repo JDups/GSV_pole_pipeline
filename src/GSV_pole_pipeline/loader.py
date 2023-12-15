@@ -20,6 +20,7 @@ TODO: Can move up many methods to super calss with some modifications.
       Like setting data_df, IMGFetch will need it's own method to override though
 TODO: Load load_gps_csv should just be put into another script that runs when 
       making the gps tracks SO that they get formatted correctly from the begining
+TODO: Check that obj_ids are actually present in data_df
 """
 
 
