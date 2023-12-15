@@ -7,6 +7,7 @@ import os
 import cv2
 
 """
+TODO: Fix doubling .png in filename for masks
 TODO: Fix plotting in jupyter notebooks
 TODO: Add plotting for when no detection of interest is made
 TODO: Make target selection into method
@@ -214,13 +215,9 @@ class Pipeline:
                 edges_angles = [
                     edge / img_w * fov for edge in [left_edge, mid_point, right_edge]
                 ]
-                print(img_w)
                 print(f"left_edge: {left_edge}")
-                print(left_edge / img_w * fov)
                 print(f"right_edge: {right_edge}")
-                print(right_edge / img_w * fov)
                 print(f"mid_point: {mid_point}")
-                print(mid_point / img_w * fov)
 
                 self.__draw_obj_span(lng, lat, heading, edges_angles, fov)
 
@@ -265,7 +262,114 @@ class Pipeline:
                         self.__draw_fov(clng, clat, est_heading, "tab:cyan")
 
                     if self.lder.source == "Dashcam":
-                        pass
+                        track = batch[0]["metadata"]["entry"]["Filename"].values[0]
+                        curr = batch[0]["metadata"]["entry"]["Point"].values[0]
+                        while curr:
+                            self.curr_step += 1
+                            curr -= 1
+                            batch = self.lder.pic_from_track(pid, track, curr)
+                            clat = batch[0]["metadata"]["location"]["lat"]
+                            clng = batch[0]["metadata"]["location"]["lng"]
+                            self.__draw_cross(clng, clat, "tab:cyan")
+                            for b in batch:
+                                self.__save_log_img(b["fn"], b["img"])
+                            if self.lder.get_distance(lng, lat, clng, clat) > 0.001:
+                                break
+                            self.curr_step += 1
+                            preds = self.pder.predict(batch)
+                            largest = {
+                                "fn": None,
+                                "interest": None,
+                                "occluding": None,
+                                "orig_img": None,
+                            }
+
+                            for p in preds:
+                                occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
+
+                                for mcntr, (clss, m) in enumerate(
+                                    zip(p["out"]["class"], p["out"]["mask"])
+                                ):
+                                    self.__save_log_img(
+                                        p["fn"],
+                                        show_mask(p["orig_img"], p_msk=m, show=False),
+                                        post_str=f"_{mcntr}_{clss}.png",
+                                    )
+
+                                    if clss in self.rls["occluding"]:
+                                        occl = np.logical_or(occl, m)
+
+                                    if clss in self.rls["interest"]:
+                                        if (
+                                            largest["fn"] is None
+                                            or m.sum() > largest["interest"].sum()
+                                        ):
+                                            largest = {
+                                                "fn": p["fn"],
+                                                "interest": m,
+                                                "occluding": None,
+                                                "orig_img": p["orig_img"],
+                                            }
+
+                                if largest["fn"] == p["fn"]:
+                                    largest["occluding"] = occl
+
+                                if not p["out"]["mask"]:
+                                    self.__save_log_img(
+                                        p["fn"], p["orig_img"], post_str="_no_masks.png"
+                                    )
+                            if largest["fn"] is None:
+                                print(f"No {self.rls['interest'][0]} found at location")
+                                break
+                            else:
+                                self.curr_step += 1
+                                self.__save_log_img(
+                                    largest["fn"],
+                                    show_mask(
+                                        largest["orig_img"],
+                                        p_msk=largest["interest"],
+                                        n_msk=largest["occluding"],
+                                        show=False,
+                                    ),
+                                )
+
+                                # print(f"File: {largest['fn']}")
+                                overlap = np.logical_and(
+                                    largest["interest"], largest["occluding"]
+                                ).sum()
+
+                                # Turns gsv heading into angle from horizontal
+                                # 0->90, 90->0, 180->-90, 270->-180, 360->-270
+                                heading = -int(largest["fn"].split("_")[3]) + 90
+                                print(f"heading: {heading}")
+
+                                self.__draw_fov(
+                                    clng, clat, heading, fov, color="tab:cyan"
+                                )
+
+                                img_w = largest["orig_img"].shape[1]
+                                column_sum = largest["interest"].sum(axis=0)
+                                colums_hit = np.nonzero(column_sum)
+                                left_edge = np.min(colums_hit)
+                                right_edge = np.max(colums_hit)
+                                mid_point = (right_edge + left_edge) / 2
+                                edges_angles = [
+                                    edge / img_w * fov
+                                    for edge in [left_edge, mid_point, right_edge]
+                                ]
+                                print(f"left_edge: {left_edge}")
+                                print(f"right_edge: {right_edge}")
+                                print(f"mid_point: {mid_point}")
+
+                                self.__draw_obj_span(
+                                    clng, clat, heading, edges_angles, fov
+                                )
+
+                                if overlap == 0:
+                                    self.__save_log_img(
+                                        largest["fn"], largest["orig_img"], step_n="F"
+                                    )
+                                    break
 
             if largest["fn"]:
                 self.__save_log_plt(largest["fn"])
