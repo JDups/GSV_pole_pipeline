@@ -136,7 +136,7 @@ class Pipeline:
             # show_masks_indiv(preds, self.rls)
             # show_masks_comb(preds, self.rls)
 
-            largest = {
+            biggest = {
                 "fn": None,
                 "interest": None,
                 "occluding": None,
@@ -159,44 +159,44 @@ class Pipeline:
                         occl = np.logical_or(occl, m)
 
                     if clss in self.rls["interest"]:
-                        if largest["fn"] is None or m.sum() > largest["interest"].sum():
-                            largest = {
+                        if biggest["fn"] is None or m.sum() > biggest["interest"].sum():
+                            biggest = {
                                 "fn": p["fn"],
                                 "interest": m,
                                 "occluding": None,
                                 "orig_img": p["orig_img"],
                             }
 
-                if largest["fn"] == p["fn"]:
-                    largest["occluding"] = occl
+                if biggest["fn"] == p["fn"]:
+                    biggest["occluding"] = occl
 
                 if not p["out"]["mask"]:
                     self.__save_log_img(
                         p["fn"], p["orig_img"], post_str="_no_masks.png"
                     )
 
-            if largest["fn"] is None:
+            if biggest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
             else:
                 self.curr_step = 2
                 self.__save_log_img(
-                    largest["fn"],
+                    biggest["fn"],
                     show_mask(
-                        largest["orig_img"],
-                        p_msk=largest["interest"],
-                        n_msk=largest["occluding"],
+                        biggest["orig_img"],
+                        p_msk=biggest["interest"],
+                        n_msk=biggest["occluding"],
                         show=False,
                     ),
                 )
 
                 # print(f"File: {largest['fn']}")
                 overlap = np.logical_and(
-                    largest["interest"], largest["occluding"]
+                    biggest["interest"], biggest["occluding"]
                 ).sum()
 
                 # Turns gsv heading into angle from horizontal
                 # 0->90, 90->0, 180->-90, 270->-180, 360->-270
-                heading = -int(largest["fn"].split("_")[3]) + 90
+                heading = -int(biggest["fn"].split("_")[3]) + 90
                 print(f"heading: {heading}")
 
                 if self.lder.source == "Dashcam":
@@ -206,8 +206,8 @@ class Pipeline:
 
                 self.__draw_fov(lng, lat, heading, fov, color="tab:blue")
 
-                img_w = largest["orig_img"].shape[1]
-                column_sum = largest["interest"].sum(axis=0)
+                img_w = biggest["orig_img"].shape[1]
+                column_sum = biggest["interest"].sum(axis=0)
                 colums_hit = np.nonzero(column_sum)
                 left_edge = np.min(colums_hit)
                 right_edge = np.max(colums_hit)
@@ -222,7 +222,7 @@ class Pipeline:
                 self.__draw_obj_span(lng, lat, heading, edges_angles, fov)
 
                 if overlap == 0:
-                    self.__save_log_img(largest["fn"], largest["orig_img"], step_n="F")
+                    self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
 
                 else:
                     if self.lder.source == "GSV":
@@ -277,7 +277,7 @@ class Pipeline:
                                 break
                             self.curr_step += 1
                             preds = self.pder.predict(batch)
-                            largest = {
+                            biggest = {
                                 "fn": None,
                                 "interest": None,
                                 "occluding": None,
@@ -301,54 +301,54 @@ class Pipeline:
 
                                     if clss in self.rls["interest"]:
                                         if (
-                                            largest["fn"] is None
-                                            or m.sum() > largest["interest"].sum()
+                                            biggest["fn"] is None
+                                            or m.sum() > biggest["interest"].sum()
                                         ):
-                                            largest = {
+                                            biggest = {
                                                 "fn": p["fn"],
                                                 "interest": m,
                                                 "occluding": None,
                                                 "orig_img": p["orig_img"],
                                             }
 
-                                if largest["fn"] == p["fn"]:
-                                    largest["occluding"] = occl
+                                if biggest["fn"] == p["fn"]:
+                                    biggest["occluding"] = occl
 
                                 if not p["out"]["mask"]:
                                     self.__save_log_img(
                                         p["fn"], p["orig_img"], post_str="_no_masks.png"
                                     )
-                            if largest["fn"] is None:
+                            if biggest["fn"] is None:
                                 print(f"No {self.rls['interest'][0]} found at location")
                                 break
                             else:
                                 self.curr_step += 1
                                 self.__save_log_img(
-                                    largest["fn"],
+                                    biggest["fn"],
                                     show_mask(
-                                        largest["orig_img"],
-                                        p_msk=largest["interest"],
-                                        n_msk=largest["occluding"],
+                                        biggest["orig_img"],
+                                        p_msk=biggest["interest"],
+                                        n_msk=biggest["occluding"],
                                         show=False,
                                     ),
                                 )
 
                                 # print(f"File: {largest['fn']}")
                                 overlap = np.logical_and(
-                                    largest["interest"], largest["occluding"]
+                                    biggest["interest"], biggest["occluding"]
                                 ).sum()
 
                                 # Turns gsv heading into angle from horizontal
                                 # 0->90, 90->0, 180->-90, 270->-180, 360->-270
-                                heading = -int(largest["fn"].split("_")[3]) + 90
+                                heading = -int(biggest["fn"].split("_")[3]) + 90
                                 print(f"heading: {heading}")
 
                                 self.__draw_fov(
                                     clng, clat, heading, fov, color="tab:cyan"
                                 )
 
-                                img_w = largest["orig_img"].shape[1]
-                                column_sum = largest["interest"].sum(axis=0)
+                                img_w = biggest["orig_img"].shape[1]
+                                column_sum = biggest["interest"].sum(axis=0)
                                 colums_hit = np.nonzero(column_sum)
                                 left_edge = np.min(colums_hit)
                                 right_edge = np.max(colums_hit)
@@ -367,12 +367,12 @@ class Pipeline:
 
                                 if overlap == 0:
                                     self.__save_log_img(
-                                        largest["fn"], largest["orig_img"], step_n="F"
+                                        biggest["fn"], biggest["orig_img"], step_n="F"
                                     )
                                     break
 
-            if largest["fn"]:
-                self.__save_log_plt(largest["fn"])
+            if biggest["fn"]:
+                self.__save_log_plt(biggest["fn"])
 
             if pcount + 1 == iterations:
                 break
