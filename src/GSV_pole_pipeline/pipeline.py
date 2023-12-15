@@ -160,6 +160,14 @@ class Pipeline:
                 self.__save_log_img(p["fn"], p["orig_img"], post_str="_no_masks.png")
 
         return biggest
+    
+    def GSV_move(self, lng, lat, heading, mid_point, img_w=640, strat="ortho", adj_angl=0, repo_len=0.0001):
+        if strat == "backup":
+            adj_angl = heading - 180 + 45 - mid_point / img_w * self.lder.fov
+        if strat == "ortho":
+            adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
+        
+        return get_end_coords(lng, lat, adj_angl, repo_len)
 
     def run(self, iterations=None):
         for pcount, (pid, batch) in enumerate(self.lder):
@@ -228,15 +236,7 @@ class Pipeline:
                 else:
                     if self.lder.source == "GSV":
                         self.curr_step = 3
-                        strat = "ortho"
-                        adj_angl = 0
-                        repo_len = 0.0001
-                        if strat == "backup":
-                            img_w = biggest["orig_img"].shape[1]
-                            adj_angl = heading - 180 + 45 - mid_point / img_w * 90
-                        if strat == "ortho":
-                            adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
-                        nlng, nlat = get_end_coords(lng, lat, adj_angl, repo_len)
+                        nlng, nlat = self.GSV_move(lng, lat, heading, mid_point)
 
                         self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
                         self.__draw_cross(nlng, nlat, "tab:brown")
@@ -261,7 +261,7 @@ class Pipeline:
 
                         est_heading = -est_heading + 90
 
-                        self.__draw_fov(clng, clat, est_heading, "tab:cyan")
+                        self.__draw_fov(clng, clat, est_heading, color="tab:cyan")
 
                     if self.lder.source == "Dashcam":
                         track = batch[0]["metadata"]["entry"]["Filename"].values[0]
