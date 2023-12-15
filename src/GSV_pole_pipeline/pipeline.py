@@ -101,6 +101,20 @@ class Pipeline:
             angles = [heading + fov / 2 - a for a in edges]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
+    def __find_draw_obj(self, mask, lng, lat, heading, fov):
+        img_w = mask.shape[1]
+        column_sum = mask.sum(axis=0)
+        colums_hit = np.nonzero(column_sum)
+        left_edge = np.min(colums_hit)
+        right_edge = np.max(colums_hit)
+        mid_point = (right_edge + left_edge) / 2
+        edges_angles = [
+            edge / img_w * fov for edge in [left_edge, mid_point, right_edge]
+        ]
+        self.__draw_obj_span(lng, lat, heading, edges_angles, fov)
+
+        return mid_point
+
     def __run_reset(self):
         plt.cla()
         self.curr_step = 0
@@ -206,20 +220,9 @@ class Pipeline:
 
                 self.__draw_fov(lng, lat, heading, fov, color="tab:blue")
 
-                img_w = biggest["orig_img"].shape[1]
-                column_sum = biggest["interest"].sum(axis=0)
-                colums_hit = np.nonzero(column_sum)
-                left_edge = np.min(colums_hit)
-                right_edge = np.max(colums_hit)
-                mid_point = (right_edge + left_edge) / 2
-                edges_angles = [
-                    edge / img_w * fov for edge in [left_edge, mid_point, right_edge]
-                ]
-                print(f"left_edge: {left_edge}")
-                print(f"right_edge: {right_edge}")
-                print(f"mid_point: {mid_point}")
-
-                self.__draw_obj_span(lng, lat, heading, edges_angles, fov)
+                mid_point = self.__find_draw_obj(
+                    biggest["interest"], lng, lat, heading, fov
+                )
 
                 if overlap == 0:
                     self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
@@ -231,6 +234,7 @@ class Pipeline:
                         adj_angl = 0
                         repo_len = 0.0001
                         if strat == "backup":
+                            img_w = biggest["orig_img"].shape[1]
                             adj_angl = heading - 180 + 45 - mid_point / img_w * 90
                         if strat == "ortho":
                             adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
@@ -309,23 +313,8 @@ class Pipeline:
                                 self.__draw_fov(
                                     clng, clat, heading, fov, color="tab:cyan"
                                 )
-
-                                img_w = biggest["orig_img"].shape[1]
-                                column_sum = biggest["interest"].sum(axis=0)
-                                colums_hit = np.nonzero(column_sum)
-                                left_edge = np.min(colums_hit)
-                                right_edge = np.max(colums_hit)
-                                mid_point = (right_edge + left_edge) / 2
-                                edges_angles = [
-                                    edge / img_w * fov
-                                    for edge in [left_edge, mid_point, right_edge]
-                                ]
-                                print(f"left_edge: {left_edge}")
-                                print(f"right_edge: {right_edge}")
-                                print(f"mid_point: {mid_point}")
-
-                                self.__draw_obj_span(
-                                    clng, clat, heading, edges_angles, fov
+                                self.__find_draw_obj(
+                                    biggest["interest"], clng, clat, heading, fov
                                 )
 
                                 if overlap == 0:
