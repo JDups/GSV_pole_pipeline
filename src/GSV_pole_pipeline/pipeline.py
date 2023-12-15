@@ -165,7 +165,7 @@ class Pipeline:
         if strat == "backup":
             adj_angl = heading - 180 + 45 - mid_point / img_w * self.lder.fov
         if strat == "ortho":
-            adj_angl = heading - 90  # + 45 - mid_point / img_w * 90
+            adj_angl = heading - 90
         
         return get_end_coords(lng, lat, adj_angl, repo_len)
 
