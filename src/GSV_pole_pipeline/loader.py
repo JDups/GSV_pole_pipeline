@@ -26,6 +26,7 @@ TODO: Load load_gps_csv should just be put into another script that runs when
 class Loader(ABC):
     def __init__(self):
         self.log_fp = None
+        self.fov = 90
 
     @abstractmethod
     def get_batch(self, idn):
@@ -217,9 +218,10 @@ class GSVFetch(Loader):
 
 
 class DCamFetch(Loader):
-    def __init__(self, csv_file, tracks_fp, pics_fp, obj_ids=None):
+    def __init__(self, csv_file, tracks_fp, pics_fp, fov=140, obj_ids=None):
         super().__init__()
         self.source = "Dashcam"
+        self.fov = fov
         self.data_df = pd.read_csv(csv_file)
         if obj_ids:
             self.obj_ids = np.array(obj_ids)

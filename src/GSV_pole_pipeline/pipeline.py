@@ -87,21 +87,29 @@ class Pipeline:
                 endx, endy = get_end_coords(x, y, a, line_len)
                 self.ax.plot([x, endx], [y, endy], **kwargs)
 
-    def __draw_fov(self, lng, lat, heading, fov=90, color="tab:blue", view_len=0.0003):
+    def __draw_fov(
+        self, lng, lat, heading, fov=None, color="tab:blue", view_len=0.0003
+    ):
+        if not fov:
+            fov = self.lder.fov
         if self.log_fp:
             kwargs = {"color": color}
             angles = [heading - fov / 2, heading + fov / 2]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __draw_obj_span(
-        self, lng, lat, heading, edges, fov=90, color="tab:red", view_len=0.0003
+        self, lng, lat, heading, edges, fov=None, color="tab:red", view_len=0.0003
     ):
+        if not fov:
+            fov = self.lder.fov
         if self.log_fp:
             kwargs = {"color": color, "linewidth": 0.5, "linestyle": "--"}
             angles = [heading + fov / 2 - a for a in edges]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
-    def __find_draw_obj(self, mask, lng, lat, heading, fov):
+    def __find_draw_obj(self, mask, lng, lat, heading, fov=None):
+        if not fov:
+            fov = self.lder.fov
         img_w = mask.shape[1]
         column_sum = mask.sum(axis=0)
         colums_hit = np.nonzero(column_sum)
@@ -213,16 +221,9 @@ class Pipeline:
                 heading = -int(biggest["fn"].split("_")[3]) + 90
                 print(f"heading: {heading}")
 
-                if self.lder.source == "Dashcam":
-                    fov = 140
-                else:
-                    fov = 90
+                self.__draw_fov(lng, lat, heading, color="tab:blue")
 
-                self.__draw_fov(lng, lat, heading, fov, color="tab:blue")
-
-                mid_point = self.__find_draw_obj(
-                    biggest["interest"], lng, lat, heading, fov
-                )
+                mid_point = self.__find_draw_obj(biggest["interest"], lng, lat, heading)
 
                 if overlap == 0:
                     self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
@@ -310,11 +311,9 @@ class Pipeline:
                                 heading = -int(biggest["fn"].split("_")[3]) + 90
                                 print(f"heading: {heading}")
 
-                                self.__draw_fov(
-                                    clng, clat, heading, fov, color="tab:cyan"
-                                )
+                                self.__draw_fov(clng, clat, heading, color="tab:cyan")
                                 self.__find_draw_obj(
-                                    biggest["interest"], clng, clat, heading, fov
+                                    biggest["interest"], clng, clat, heading
                                 )
 
                                 if overlap == 0:
