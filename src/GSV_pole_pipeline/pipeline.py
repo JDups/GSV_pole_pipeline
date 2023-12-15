@@ -115,9 +115,7 @@ class Pipeline:
         for p in preds:
             occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
-            for mcntr, (clss, m) in enumerate(
-                zip(p["out"]["class"], p["out"]["mask"])
-            ):
+            for mcntr, (clss, m) in enumerate(zip(p["out"]["class"], p["out"]["mask"])):
                 self.__save_log_img(
                     p["fn"],
                     show_mask(p["orig_img"], p_msk=m, show=False),
@@ -140,12 +138,9 @@ class Pipeline:
                 biggest["occluding"] = occl
 
             if not p["out"]["mask"]:
-                self.__save_log_img(
-                    p["fn"], p["orig_img"], post_str="_no_masks.png"
-                )
-        
-        return biggest
+                self.__save_log_img(p["fn"], p["orig_img"], post_str="_no_masks.png")
 
+        return biggest
 
     def run(self, iterations=None):
         for pcount, (pid, batch) in enumerate(self.lder):
@@ -281,7 +276,7 @@ class Pipeline:
                             if self.lder.get_distance(lng, lat, clng, clat) > 0.001:
                                 break
                             self.curr_step += 1
-                            
+
                             preds = self.pder.predict(batch)
 
                             biggest = self.find_biggest(preds)
