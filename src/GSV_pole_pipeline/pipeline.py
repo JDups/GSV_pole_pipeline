@@ -105,6 +105,48 @@ class Pipeline:
         plt.cla()
         self.curr_step = 0
 
+    def find_biggest(self, preds):
+        biggest = {
+            "fn": None,
+            "interest": None,
+            "occluding": None,
+            "orig_img": None,
+        }
+        for p in preds:
+            occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
+
+            for mcntr, (clss, m) in enumerate(
+                zip(p["out"]["class"], p["out"]["mask"])
+            ):
+                self.__save_log_img(
+                    p["fn"],
+                    show_mask(p["orig_img"], p_msk=m, show=False),
+                    post_str=f"_{mcntr}_{clss}.png",
+                )
+
+                if clss in self.rls["occluding"]:
+                    occl = np.logical_or(occl, m)
+
+                if clss in self.rls["interest"]:
+                    if biggest["fn"] is None or m.sum() > biggest["interest"].sum():
+                        biggest = {
+                            "fn": p["fn"],
+                            "interest": m,
+                            "occluding": None,
+                            "orig_img": p["orig_img"],
+                        }
+
+            if biggest["fn"] == p["fn"]:
+                biggest["occluding"] = occl
+
+            if not p["out"]["mask"]:
+                self.__save_log_img(
+                    p["fn"], p["orig_img"], post_str="_no_masks.png"
+                )
+        
+        return biggest
+
+
     def run(self, iterations=None):
         for pcount, (pid, batch) in enumerate(self.lder):
             self.__run_reset()
@@ -136,44 +178,7 @@ class Pipeline:
             # show_masks_indiv(preds, self.rls)
             # show_masks_comb(preds, self.rls)
 
-            biggest = {
-                "fn": None,
-                "interest": None,
-                "occluding": None,
-                "orig_img": None,
-            }
-
-            for p in preds:
-                occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
-
-                for mcntr, (clss, m) in enumerate(
-                    zip(p["out"]["class"], p["out"]["mask"])
-                ):
-                    self.__save_log_img(
-                        p["fn"],
-                        show_mask(p["orig_img"], p_msk=m, show=False),
-                        post_str=f"_{mcntr}_{clss}.png",
-                    )
-
-                    if clss in self.rls["occluding"]:
-                        occl = np.logical_or(occl, m)
-
-                    if clss in self.rls["interest"]:
-                        if biggest["fn"] is None or m.sum() > biggest["interest"].sum():
-                            biggest = {
-                                "fn": p["fn"],
-                                "interest": m,
-                                "occluding": None,
-                                "orig_img": p["orig_img"],
-                            }
-
-                if biggest["fn"] == p["fn"]:
-                    biggest["occluding"] = occl
-
-                if not p["out"]["mask"]:
-                    self.__save_log_img(
-                        p["fn"], p["orig_img"], post_str="_no_masks.png"
-                    )
+            biggest = self.find_biggest(preds)
 
             if biggest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
@@ -276,48 +281,11 @@ class Pipeline:
                             if self.lder.get_distance(lng, lat, clng, clat) > 0.001:
                                 break
                             self.curr_step += 1
+                            
                             preds = self.pder.predict(batch)
-                            biggest = {
-                                "fn": None,
-                                "interest": None,
-                                "occluding": None,
-                                "orig_img": None,
-                            }
 
-                            for p in preds:
-                                occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
+                            biggest = self.find_biggest(preds)
 
-                                for mcntr, (clss, m) in enumerate(
-                                    zip(p["out"]["class"], p["out"]["mask"])
-                                ):
-                                    self.__save_log_img(
-                                        p["fn"],
-                                        show_mask(p["orig_img"], p_msk=m, show=False),
-                                        post_str=f"_{mcntr}_{clss}.png",
-                                    )
-
-                                    if clss in self.rls["occluding"]:
-                                        occl = np.logical_or(occl, m)
-
-                                    if clss in self.rls["interest"]:
-                                        if (
-                                            biggest["fn"] is None
-                                            or m.sum() > biggest["interest"].sum()
-                                        ):
-                                            biggest = {
-                                                "fn": p["fn"],
-                                                "interest": m,
-                                                "occluding": None,
-                                                "orig_img": p["orig_img"],
-                                            }
-
-                                if biggest["fn"] == p["fn"]:
-                                    biggest["occluding"] = occl
-
-                                if not p["out"]["mask"]:
-                                    self.__save_log_img(
-                                        p["fn"], p["orig_img"], post_str="_no_masks.png"
-                                    )
                             if biggest["fn"] is None:
                                 print(f"No {self.rls['interest'][0]} found at location")
                                 break
