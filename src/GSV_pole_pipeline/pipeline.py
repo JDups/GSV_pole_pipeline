@@ -13,9 +13,6 @@ TODO: Add plotting for when no detection of interest is made
 TODO: Make target selection into method
 TODO: Loader and pipeline should be merged into same objects.
       The pipeline logic ends up depending on the loader anyways.
-
-TODO: Make the drawfov method take an argument for the actual fov
-      Then keep trying to fit the Dashcam loader in
 """
 
 
