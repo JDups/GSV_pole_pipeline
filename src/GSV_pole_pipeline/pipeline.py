@@ -162,15 +162,7 @@ class Pipeline:
         return biggest
 
     def GSV_move(
-        self,
-        lng,
-        lat,
-        heading,
-        mid_point,
-        img_w=640,
-        strat="ortho",
-        adj_angl=0,
-        repo_len=0.0001,
+        self, lng, lat, heading, mid_point, img_w=640, strat="ortho", repo_len=0.0001
     ):
         if strat == "backup":
             adj_angl = heading - 180 + 45 - mid_point / img_w * self.lder.fov
