@@ -160,13 +160,23 @@ class Pipeline:
                 self.__save_log_img(p["fn"], p["orig_img"], post_str="_no_masks.png")
 
         return biggest
-    
-    def GSV_move(self, lng, lat, heading, mid_point, img_w=640, strat="ortho", adj_angl=0, repo_len=0.0001):
+
+    def GSV_move(
+        self,
+        lng,
+        lat,
+        heading,
+        mid_point,
+        img_w=640,
+        strat="ortho",
+        adj_angl=0,
+        repo_len=0.0001,
+    ):
         if strat == "backup":
             adj_angl = heading - 180 + 45 - mid_point / img_w * self.lder.fov
         if strat == "ortho":
             adj_angl = heading - 90
-        
+
         return get_end_coords(lng, lat, adj_angl, repo_len)
 
     def run(self, iterations=None):
