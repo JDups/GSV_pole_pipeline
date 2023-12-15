@@ -174,9 +174,6 @@ class Pipeline:
     def run(self, iterations=None):
         for pcount, (pid, batch) in enumerate(self.lder):
             self.__run_reset()
-            # pid = 12390  # random good one
-            # pid = 9633 # bad status
-            # pid = 2569  # blurring on pole
             print(f"\nPole count: {pcount}, Pole ID: {pid}")
 
             plat, plng = self.lder.fetch_latlng(pid)
