@@ -175,7 +175,7 @@ class GSVFetch(Loader):
         # print(api_results.metadata)
 
         if api_results.metadata[0]["status"] != "OK":
-            with open(self.log_fp + f"p{idn}_sN", "w") as f:
+            with open(self.log_fp + f"p{idn}_sN.txt", "w") as f:
                 print(
                     f"\nStreet View request failed. Reponse: {api_results.metadata[0]['status']}\n"
                 )
