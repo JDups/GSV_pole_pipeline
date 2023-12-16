@@ -188,7 +188,7 @@ class GSVFetch(Loader):
         rlng = api_results.metadata[0]["location"]["lng"]  # real Longitude
         est_heading = get_est_heading(rlng, rlat, lng, lat)
 
-        if not heading:
+        if heading is None:
             api_list[0]["heading"] = est_heading
 
         fn = [

@@ -56,7 +56,7 @@ class Pipeline:
         )
 
     def __save_log_img(self, fn, img, step_n=None, post_str=""):
-        if step_n == None:
+        if step_n is None:
             step_n = self.curr_step
         if self.log_fp:
             fn = self.__save_fn(fn, step_n, post_str)
@@ -87,7 +87,7 @@ class Pipeline:
     def __draw_fov(
         self, lng, lat, heading, fov=None, color="tab:blue", view_len=0.0003
     ):
-        if not fov:
+        if fov is None:
             fov = self.lder.fov
         if self.log_fp:
             kwargs = {"color": color}
@@ -97,7 +97,7 @@ class Pipeline:
     def __draw_obj_span(
         self, lng, lat, heading, edges, fov=None, color="tab:red", view_len=0.0003
     ):
-        if not fov:
+        if fov is None:
             fov = self.lder.fov
         if self.log_fp:
             kwargs = {"color": color, "linewidth": 0.5, "linestyle": "--"}
@@ -105,7 +105,7 @@ class Pipeline:
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
     def __find_draw_obj(self, mask, lng, lat, heading, fov=None):
-        if not fov:
+        if fov is None:
             fov = self.lder.fov
         img_w = mask.shape[1]
         column_sum = mask.sum(axis=0)
