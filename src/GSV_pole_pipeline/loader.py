@@ -69,7 +69,7 @@ class ImgFetch(Loader):
 
     def __init__(self, directory):
         super().__init__()
-        self.set_directory(self.directory)
+        self.set_directory(directory)
 
     def set_directory(self, directory):
         self.directory = directory
