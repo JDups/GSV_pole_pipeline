@@ -204,6 +204,10 @@ class Pipeline:
 
             if biggest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
+                for b in batch:
+                    heading = -int(b["fn"].split("_")[3]) + 90
+                    self.__draw_fov(lng, lat, heading, color="tab:blue")
+                self.__save_log_plt(batch[0]["fn"])
                 continue
 
             self.curr_step = 2
