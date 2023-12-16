@@ -266,8 +266,9 @@ class Pipeline:
                 self.__draw_fov(clng, clat, est_heading, color="tab:cyan")
 
             if self.lder.source == "Dashcam":
-                track = batch[0]["metadata"]["entry"]["Filename"].values[0]
-                curr = batch[0]["metadata"]["entry"]["Point"].values[0]
+                track, curr = batch[0]["metadata"]["entry"][
+                    ["Filename", "Point"]
+                ].values[0]
                 while curr:
                     self.curr_step += 1
                     curr -= 1
