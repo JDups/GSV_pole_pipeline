@@ -36,7 +36,7 @@ def show_masks_indiv(preds, rules):
 
 
 class Pipeline:
-    def __init__(self, loader, predictor, rules={}, log_fp=None):
+    def __init__(self, loader, predictor, rules: dict = {}, log_fp: str | None = None):
         self.lder = loader
         self.pder = predictor
         self.rls = rules
@@ -187,7 +187,7 @@ class Pipeline:
 
             lat = batch[0]["metadata"]["location"]["lat"]
             lng = batch[0]["metadata"]["location"]["lng"]
-            print(f"GSV lat: {lat} lng: {lng}")
+            print(f"{self.lder.source} lat: {lat} lng: {lng}")
             self.__draw_cross(lng, lat, "tab:blue")
             for b in batch:
                 self.__save_log_img(b["fn"], b["img"])
