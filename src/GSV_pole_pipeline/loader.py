@@ -331,7 +331,7 @@ class DCamFetch(Loader):
             track_df = df_close[df_close["Filename"] == track]
 
             close_tracks[track] = None
-            for i, row in track_df.iterrows():
+            for _, row in track_df.iterrows():
                 dist = self.get_distance(
                     row["Longitude(Deg)"], row["Latitude(Deg)"], lng, lat
                 )
@@ -345,8 +345,6 @@ class DCamFetch(Loader):
         for track in close_tracks:
             found = False
             frame_pnt = close_tracks[track][0]
-            color = "tab:orange"
-            max_idx = len(self.tracks_df[self.tracks_df["Filename"] == track].index) - 1
             while not found:
                 row = self.tracks_df[
                     (self.tracks_df["Filename"] == track)
