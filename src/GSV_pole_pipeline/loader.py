@@ -164,7 +164,6 @@ class GSVFetch(Loader):
 
     def image_from_GSV(self, link):
         if link in self.saved_imgs:
-            api_results = self.saved_imgs[link]
             img = self.saved_imgs[link]
         else:
             img = np.array(Image.open(BytesIO(requests.get(link).content)))
