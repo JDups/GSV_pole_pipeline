@@ -36,7 +36,7 @@ def show_masks_indiv(preds, rules):
 
 
 class Pipeline:
-    def __init__(self, loader, predictor, rules: dict = {}, log_fp: str | None = None):
+    def __init__(self, loader, predictor, rules={}, log_fp=None):
         self.lder = loader
         self.pder = predictor
         self.rls = rules
