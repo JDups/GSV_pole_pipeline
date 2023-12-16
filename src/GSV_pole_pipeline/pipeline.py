@@ -172,7 +172,8 @@ class Pipeline:
         return get_end_coords(lng, lat, adj_angl, repo_len)
 
     def run(self, iterations=None):
-        for pcount, (pid, batch) in enumerate(self.lder):
+        self.lder.iters = iterations
+        for pcount, pid, batch in self.lder:
             self.__run_reset()
             print(f"\nPole count: {pcount}, Pole ID: {pid}")
 
@@ -321,8 +322,8 @@ class Pipeline:
             if biggest["fn"]:
                 self.__save_log_plt(biggest["fn"])
 
-            if pcount + 1 == iterations:
-                break
+            # if pcount + 1 == iterations:
+            #     break
 
 
 """

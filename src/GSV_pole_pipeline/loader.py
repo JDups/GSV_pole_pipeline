@@ -28,6 +28,7 @@ class Loader(ABC):
     def __init__(self):
         self.log_fp = None
         self.fov = 90
+        self.iters = None
 
     @abstractmethod
     def get_batch(self, idn):
@@ -47,6 +48,20 @@ class Loader(ABC):
         return self.data_df[self.data_df["pole_id"] == pid][
             ["Latitude", "Longitude"]
         ].values[0]
+
+    # Adding these broke ImgFetch
+    def __iter__(self):
+        self.obj_n = 0
+        return self
+
+    def __next__(self):
+        if self.obj_n == len(self.obj_ids) or self.obj_n == self.iters:
+            raise StopIteration
+
+        obj_id = self.obj_ids[self.obj_n]
+        self.obj_n += 1
+
+        return self.obj_n-1, obj_id, self.get_batch(obj_id)
 
 
 class ImgFetch(Loader):
@@ -104,19 +119,6 @@ class GSVFetch(Loader):
             "key": self.API_key,
             "source": "outdoor",
         }
-
-    def __iter__(self):
-        self.obj_n = 0
-        return self
-
-    def __next__(self):
-        if self.obj_n == len(self.obj_ids):
-            raise StopIteration
-
-        obj_id = self.obj_ids[self.obj_n]
-        self.obj_n += 1
-
-        return obj_id, self.get_batch(obj_id)
 
     def set_log_fp(self, fp):
         super().set_log_fp(fp)
@@ -233,19 +235,6 @@ class DCamFetch(Loader):
             print(p)
             l_df.append(self.load_gps_csv(p, pics_fp))
         self.tracks_df = pd.concat(l_df)
-
-    def __iter__(self):
-        self.obj_n = 0
-        return self
-
-    def __next__(self):
-        if self.obj_n == len(self.obj_ids):
-            raise StopIteration
-
-        obj_id = self.obj_ids[self.obj_n]
-        self.obj_n += 1
-
-        return obj_id, self.get_batch(obj_id)
 
     def fetch_latlng(self, pid):
         return self.data_df[self.data_df["OBJECTID"] == pid][["Lat", "Long"]].values[0]
