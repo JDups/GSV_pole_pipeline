@@ -204,126 +204,120 @@ class Pipeline:
 
             if biggest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
+                continue
+
+            self.curr_step = 2
+            self.__save_log_img(
+                biggest["fn"],
+                show_mask(
+                    biggest["orig_img"],
+                    p_msk=biggest["interest"],
+                    n_msk=biggest["occluding"],
+                    show=False,
+                ),
+            )
+
+            # print(f"File: {largest['fn']}")
+            overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
+
+            # Turns gsv heading into angle from horizontal
+            # 0->90, 90->0, 180->-90, 270->-180, 360->-270
+            heading = -int(biggest["fn"].split("_")[3]) + 90
+            print(f"heading: {heading}")
+
+            self.__draw_fov(lng, lat, heading, color="tab:blue")
+
+            mid_point = self.__find_draw_obj(biggest["interest"], lng, lat, heading)
+
+            if overlap == 0:
+                self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
+
             else:
-                self.curr_step = 2
-                self.__save_log_img(
-                    biggest["fn"],
-                    show_mask(
-                        biggest["orig_img"],
-                        p_msk=biggest["interest"],
-                        n_msk=biggest["occluding"],
-                        show=False,
-                    ),
-                )
+                if self.lder.source == "GSV":
+                    self.curr_step = 3
+                    nlng, nlat = self.GSV_move(lng, lat, heading, mid_point)
 
-                # print(f"File: {largest['fn']}")
-                overlap = np.logical_and(
-                    biggest["interest"], biggest["occluding"]
-                ).sum()
+                    self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
+                    self.__draw_cross(nlng, nlat, "tab:brown")
 
-                # Turns gsv heading into angle from horizontal
-                # 0->90, 90->0, 180->-90, 270->-180, 360->-270
-                heading = -int(biggest["fn"].split("_")[3]) + 90
-                print(f"heading: {heading}")
+                    est_heading = get_est_heading(nlng, nlat, plng, plat)
 
-                self.__draw_fov(lng, lat, heading, color="tab:blue")
+                    _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
 
-                mid_point = self.__find_draw_obj(biggest["interest"], lng, lat, heading)
+                    clat = new_loc.metadata[0]["location"]["lat"]
+                    clng = new_loc.metadata[0]["location"]["lng"]
 
-                if overlap == 0:
-                    self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
+                    self.__draw_cross(clng, clat, "tab:cyan")
 
-                else:
-                    if self.lder.source == "GSV":
-                        self.curr_step = 3
-                        nlng, nlat = self.GSV_move(lng, lat, heading, mid_point)
+                    est_heading = get_est_heading(clng, clat, plng, plat)
 
-                        self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
-                        self.__draw_cross(nlng, nlat, "tab:brown")
+                    self.curr_step = 4
+                    new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
 
-                        est_heading = get_est_heading(nlng, nlat, plng, plat)
+                    self.__save_log_img(new_pic["fn"], new_pic["img"], step_n="F")
 
-                        _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
+                    est_heading = -est_heading + 90
 
-                        clat = new_loc.metadata[0]["location"]["lat"]
-                        clng = new_loc.metadata[0]["location"]["lng"]
+                    self.__draw_fov(clng, clat, est_heading, color="tab:cyan")
 
+                if self.lder.source == "Dashcam":
+                    track = batch[0]["metadata"]["entry"]["Filename"].values[0]
+                    curr = batch[0]["metadata"]["entry"]["Point"].values[0]
+                    while curr:
+                        self.curr_step += 1
+                        curr -= 1
+                        batch = self.lder.pic_from_track(pid, track, curr)
+                        clat = batch[0]["metadata"]["location"]["lat"]
+                        clng = batch[0]["metadata"]["location"]["lng"]
                         self.__draw_cross(clng, clat, "tab:cyan")
+                        for b in batch:
+                            self.__save_log_img(b["fn"], b["img"])
+                        if self.lder.get_distance(lng, lat, clng, clat) > 0.001:
+                            break
+                        self.curr_step += 1
 
-                        est_heading = get_est_heading(clng, clat, plng, plat)
+                        preds = self.pder.predict(batch)
 
-                        self.curr_step = 4
-                        new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[
-                            0
-                        ]
+                        biggest = self.find_biggest(preds)
 
-                        self.__save_log_img(new_pic["fn"], new_pic["img"], step_n="F")
-
-                        est_heading = -est_heading + 90
-
-                        self.__draw_fov(clng, clat, est_heading, color="tab:cyan")
-
-                    if self.lder.source == "Dashcam":
-                        track = batch[0]["metadata"]["entry"]["Filename"].values[0]
-                        curr = batch[0]["metadata"]["entry"]["Point"].values[0]
-                        while curr:
+                        if biggest["fn"] is None:
+                            print(f"No {self.rls['interest'][0]} found at location")
+                            break
+                        else:
                             self.curr_step += 1
-                            curr -= 1
-                            batch = self.lder.pic_from_track(pid, track, curr)
-                            clat = batch[0]["metadata"]["location"]["lat"]
-                            clng = batch[0]["metadata"]["location"]["lng"]
-                            self.__draw_cross(clng, clat, "tab:cyan")
-                            for b in batch:
-                                self.__save_log_img(b["fn"], b["img"])
-                            if self.lder.get_distance(lng, lat, clng, clat) > 0.001:
-                                break
-                            self.curr_step += 1
+                            self.__save_log_img(
+                                biggest["fn"],
+                                show_mask(
+                                    biggest["orig_img"],
+                                    p_msk=biggest["interest"],
+                                    n_msk=biggest["occluding"],
+                                    show=False,
+                                ),
+                            )
 
-                            preds = self.pder.predict(batch)
+                            # print(f"File: {largest['fn']}")
+                            overlap = np.logical_and(
+                                biggest["interest"], biggest["occluding"]
+                            ).sum()
 
-                            biggest = self.find_biggest(preds)
+                            # Turns gsv heading into angle from horizontal
+                            # 0->90, 90->0, 180->-90, 270->-180, 360->-270
+                            heading = -int(biggest["fn"].split("_")[3]) + 90
+                            print(f"heading: {heading}")
 
-                            if biggest["fn"] is None:
-                                print(f"No {self.rls['interest'][0]} found at location")
-                                break
-                            else:
-                                self.curr_step += 1
+                            self.__draw_fov(clng, clat, heading, color="tab:cyan")
+                            self.__find_draw_obj(
+                                biggest["interest"], clng, clat, heading
+                            )
+
+                            if overlap == 0:
                                 self.__save_log_img(
-                                    biggest["fn"],
-                                    show_mask(
-                                        biggest["orig_img"],
-                                        p_msk=biggest["interest"],
-                                        n_msk=biggest["occluding"],
-                                        show=False,
-                                    ),
+                                    biggest["fn"], biggest["orig_img"], step_n="F"
                                 )
-
-                                # print(f"File: {largest['fn']}")
-                                overlap = np.logical_and(
-                                    biggest["interest"], biggest["occluding"]
-                                ).sum()
-
-                                # Turns gsv heading into angle from horizontal
-                                # 0->90, 90->0, 180->-90, 270->-180, 360->-270
-                                heading = -int(biggest["fn"].split("_")[3]) + 90
-                                print(f"heading: {heading}")
-
-                                self.__draw_fov(clng, clat, heading, color="tab:cyan")
-                                self.__find_draw_obj(
-                                    biggest["interest"], clng, clat, heading
-                                )
-
-                                if overlap == 0:
-                                    self.__save_log_img(
-                                        biggest["fn"], biggest["orig_img"], step_n="F"
-                                    )
-                                    break
+                                break
 
             if biggest["fn"]:
                 self.__save_log_plt(biggest["fn"])
-
-            # if pcount + 1 == iterations:
-            #     break
 
 
 """

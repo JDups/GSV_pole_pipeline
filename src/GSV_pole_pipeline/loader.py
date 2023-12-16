@@ -61,7 +61,7 @@ class Loader(ABC):
         obj_id = self.obj_ids[self.obj_n]
         self.obj_n += 1
 
-        return self.obj_n-1, obj_id, self.get_batch(obj_id)
+        return self.obj_n - 1, obj_id, self.get_batch(obj_id)
 
 
 class ImgFetch(Loader):
