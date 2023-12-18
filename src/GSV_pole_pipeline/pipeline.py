@@ -10,7 +10,6 @@ import cv2
 TODO: Fix doubling .png in filename for masks
 TODO: Fix plotting in jupyter notebooks
 TODO: Add plotting for when no detection of interest is made
-TODO: Make target selection into method
 TODO: Loader and pipeline should be merged into same objects.
       The pipeline logic ends up depending on the loader anyways.
 """
