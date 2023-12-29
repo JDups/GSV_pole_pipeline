@@ -52,16 +52,21 @@ class Loader(ABC):
     # Adding these broke ImgFetch
     def __iter__(self):
         self.obj_n = 0
+        self.iter_n = 0
         return self
 
     def __next__(self):
-        if self.obj_n == len(self.obj_ids) or self.obj_n == self.iters:
+        if self.obj_n == len(self.obj_ids) or self.iter_n == self.iters:
             raise StopIteration
 
         obj_id = self.obj_ids[self.obj_n]
-        self.obj_n += 1
+        batch = self.get_batch(obj_id)
 
-        return self.obj_n - 1, obj_id, self.get_batch(obj_id)
+        self.obj_n += 1
+        if batch:
+            self.iter_n += 1
+
+        return self.obj_n - 1, obj_id, batch
 
 
 class ImgFetch(Loader):
