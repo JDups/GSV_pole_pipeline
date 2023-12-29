@@ -152,6 +152,13 @@ class GSVFetch(Loader):
             with open(self.cache_loc + "saved_imgs.pkl", "wb") as f:
                 pickle.dump(self.saved_imgs, f)
 
+    def __log_failed(self, idn, api_results):
+        with open(self.log_fp + f"p{idn}_sN.txt", "w") as f:
+            print(
+                f"\nStreet View request failed. Reponse: {api_results.metadata[0]['status']}\n"
+            )
+            f.write(api_results.metadata[0]["status"])
+
     def results_from_loc(self, lat, lng, heading=None):
         apiargs = self.api_defaults.copy()
         apiargs["location"] = f"{lat},{lng}"
@@ -181,11 +188,7 @@ class GSVFetch(Loader):
         # print(api_results.metadata)
 
         if api_results.metadata[0]["status"] != "OK":
-            with open(self.log_fp + f"p{idn}_sN.txt", "w") as f:
-                print(
-                    f"\nStreet View request failed. Reponse: {api_results.metadata[0]['status']}\n"
-                )
-                f.write(api_results.metadata[0]["status"])
+            self.__log_failed(idn, api_results)
             return None
 
         rlat = api_results.metadata[0]["location"]["lat"]  # real Latitude
