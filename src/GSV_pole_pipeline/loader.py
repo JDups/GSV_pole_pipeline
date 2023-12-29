@@ -206,7 +206,6 @@ class GSVFetch(Loader):
         return [
             self.output_dict(
                 fn=fn,
-                # img=np.array(Image.open(BytesIO(requests.get(link).content))),
                 img=self.image_from_GSV(link),
                 mtdt=mtdt,
             )
