@@ -235,7 +235,7 @@ class DCamFetch(Loader):
         super().__init__(csv_file, obj_ids)
         self.fov = fov
         l_df = []
-        for p in tracks_fp:
+        for p in glob(tracks_fp):
             print(p)
             l_df.append(self.load_gps_csv(p, pics_fp))
         self.tracks_df = pd.concat(l_df)
