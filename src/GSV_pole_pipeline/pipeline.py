@@ -65,6 +65,17 @@ class Pipeline:
         for b in batch:
             self.__save_log_img(b["fn"], b["img"])
 
+    def __save_log_biggest(self, biggest):
+        self.__save_log_img(
+            biggest["fn"],
+            show_mask(
+                biggest["orig_img"],
+                p_msk=biggest["interest"],
+                n_msk=biggest["occluding"],
+                show=False,
+            ),
+        )
+
     def __save_log_plt(self, fn, post_str=""):
         if self.log_fp:
             fn = self.__save_fn(fn, "P", post_str)
@@ -215,15 +226,7 @@ class Pipeline:
             return
 
         self.curr_step = 2
-        self.__save_log_img(
-            biggest["fn"],
-            show_mask(
-                biggest["orig_img"],
-                p_msk=biggest["interest"],
-                n_msk=biggest["occluding"],
-                show=False,
-            ),
-        )
+        self.__save_log_biggest(biggest["fn"])
 
         # print(f"File: {largest['fn']}")
         overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
@@ -271,15 +274,7 @@ class Pipeline:
         biggest = self.find_biggest(preds)
 
         self.curr_step = 5
-        self.__save_log_img(
-            biggest["fn"],
-            show_mask(
-                biggest["orig_img"],
-                p_msk=biggest["interest"],
-                n_msk=biggest["occluding"],
-                show=False,
-            ),
-        )
+        self.__save_log_biggest(biggest["fn"])
         overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
 
         # If picture is good
@@ -343,22 +338,12 @@ class Pipeline:
 
         if biggest["fn"] is None:
             print(f"No {self.rls['interest'][0]} found at location")
-            for b in batch:
-                heading = -int(b["fn"].split("_")[3]) + 90
-                self.__draw_fov(lng, lat, heading, color="tab:blue")
+            self.__draw_batch_fov(lng, lat, batch)
             self.__save_log_plt(batch[0]["fn"])
             return
 
         self.curr_step = 2
-        self.__save_log_img(
-            biggest["fn"],
-            show_mask(
-                biggest["orig_img"],
-                p_msk=biggest["interest"],
-                n_msk=biggest["occluding"],
-                show=False,
-            ),
-        )
+        self.__save_log_biggest(biggest["fn"])
 
         # print(f"File: {largest['fn']}")
         overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
