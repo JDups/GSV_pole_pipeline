@@ -25,11 +25,22 @@ TODO: Check that obj_ids are actually present in data_df
 
 
 class Loader(ABC):
-    def __init__(self, csv_file):
+    def __init__(self, csv_file, obj_ids):
         self.log_fp = None
         self.fov = 90
         self.iters = None
         self.data_df = pd.read_csv(csv_file)
+
+        match self.source:
+            case "GSV":
+                id_col = "pole_id"
+            case "Dashcam":
+                id_col = "OBJECTID"
+        
+        if obj_ids:
+            self.obj_ids = np.array(obj_ids)
+        else:
+            self.obj_ids = self.data_df[id_col].unique()
 
     @abstractmethod
     def get_batch(self, idn):
@@ -107,14 +118,10 @@ class ImgFetch(Loader):
 
 class GSVFetch(Loader):
     def __init__(self, csv_file, API_key, obj_ids=None, full_360=False):
-        super().__init__(csv_file)
         self.source = "GSV"
+        super().__init__(csv_file, obj_ids)
         self.API_key = API_key
         self.full_360 = full_360
-        if obj_ids:
-            self.obj_ids = np.array(obj_ids)
-        else:
-            self.obj_ids = self.data_df["pole_id"].unique()
         self.saved_queries = {}
         self.saved_imgs = {}
         self.api_defaults = {
@@ -228,13 +235,9 @@ class GSVFetch(Loader):
 
 class DCamFetch(Loader):
     def __init__(self, csv_file, tracks_fp, pics_fp, fov=140, obj_ids=None):
-        super().__init__(csv_file)
         self.source = "Dashcam"
+        super().__init__(csv_file, obj_ids)
         self.fov = fov
-        if obj_ids:
-            self.obj_ids = np.array(obj_ids)
-        else:
-            self.obj_ids = self.data_df["OBJECTID"].unique()
         l_df = []
         for p in tracks_fp:
             print(p)
