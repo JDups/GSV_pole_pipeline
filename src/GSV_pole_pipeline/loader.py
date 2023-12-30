@@ -30,17 +30,11 @@ class Loader(ABC):
         self.fov = 90
         self.iters = None
         self.data_df = pd.read_csv(csv_file)
-
-        match self.source:
-            case "GSV":
-                id_col = "pole_id"
-            case "Dashcam":
-                id_col = "OBJECTID"
         
         if obj_ids:
             self.obj_ids = np.array(obj_ids)
         else:
-            self.obj_ids = self.data_df[id_col].unique()
+            self.obj_ids = self.data_df[self.id_col].unique()
 
     @abstractmethod
     def get_batch(self, idn):
@@ -119,6 +113,7 @@ class ImgFetch(Loader):
 class GSVFetch(Loader):
     def __init__(self, csv_file, API_key, obj_ids=None, full_360=False):
         self.source = "GSV"
+        self.id_col = "pole_id"
         super().__init__(csv_file, obj_ids)
         self.API_key = API_key
         self.full_360 = full_360
@@ -236,6 +231,7 @@ class GSVFetch(Loader):
 class DCamFetch(Loader):
     def __init__(self, csv_file, tracks_fp, pics_fp, fov=140, obj_ids=None):
         self.source = "Dashcam"
+        self.id_col = "OBJECTID"
         super().__init__(csv_file, obj_ids)
         self.fov = fov
         l_df = []
