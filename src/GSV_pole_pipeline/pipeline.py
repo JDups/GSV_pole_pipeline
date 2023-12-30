@@ -93,6 +93,11 @@ class Pipeline:
             angles = [heading - fov / 2, heading + fov / 2]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
+    def __draw_batch_fov(self, lng, lat, batch):
+        for b in batch:
+            heading = -int(b["fn"].split("_")[3]) + 90
+            self.__draw_fov(lng, lat, heading, color="tab:blue")
+
     def __draw_obj_span(
         self, lng, lat, heading, edges, fov=None, color="tab:red", view_len=0.0003
     ):
@@ -198,9 +203,7 @@ class Pipeline:
 
         if biggest["fn"] is None:
             print(f"No {self.rls['interest'][0]} found at location")
-            for b in batch:
-                heading = -int(b["fn"].split("_")[3]) + 90
-                self.__draw_fov(lng, lat, heading, color="tab:blue")
+            self.__draw_batch_fov(lng, lat, batch)
             self.__save_log_plt(batch[0]["fn"])
             return
 
