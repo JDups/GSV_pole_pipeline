@@ -61,6 +61,10 @@ class Pipeline:
             fn = self.__save_fn(fn, step_n, post_str)
             cv2.imwrite(fn, cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
+    def __save_log_batch(self, batch):
+        for b in batch:
+            self.__save_log_img(b["fn"], b["img"])
+
     def __save_log_plt(self, fn, post_str=""):
         if self.log_fp:
             fn = self.__save_fn(fn, "P", post_str)
@@ -191,8 +195,7 @@ class Pipeline:
         lng = batch[0]["metadata"]["location"]["lng"]
         print(f"{self.lder.source} lat: {lat} lng: {lng}")
         self.__draw_cross(lng, lat, "tab:blue")
-        for b in batch:
-            self.__save_log_img(b["fn"], b["img"])
+        self.__save_log_batch(batch)
 
         self.curr_step = 1
         preds = self.pder.predict(batch)
@@ -326,8 +329,7 @@ class Pipeline:
         lng = batch[0]["metadata"]["location"]["lng"]
         print(f"{self.lder.source} lat: {lat} lng: {lng}")
         self.__draw_cross(lng, lat, "tab:blue")
-        for b in batch:
-            self.__save_log_img(b["fn"], b["img"])
+        self.__save_log_batch(batch)
 
         self.curr_step = 1
         preds = self.pder.predict(batch)
