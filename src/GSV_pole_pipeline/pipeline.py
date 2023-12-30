@@ -226,7 +226,7 @@ class Pipeline:
             return
 
         self.curr_step = 2
-        self.__save_log_biggest(biggest["fn"])
+        self.__save_log_biggest(biggest)
 
         # print(f"File: {largest['fn']}")
         overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
@@ -274,14 +274,15 @@ class Pipeline:
         biggest = self.find_biggest(preds)
 
         self.curr_step = 5
-        self.__save_log_biggest(biggest["fn"])
-        overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
+        if biggest["fn"]:
+            self.__save_log_biggest(biggest)
+            overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
 
-        # If picture is good
-        if overlap == 0:
-            self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
-            self.__save_log_plt(biggest["fn"])
-            return
+            # If picture is good
+            if overlap == 0:
+                self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
+                self.__save_log_plt(biggest["fn"])
+                return
 
         # Second move
         self.curr_step = 6
@@ -343,7 +344,7 @@ class Pipeline:
             return
 
         self.curr_step = 2
-        self.__save_log_biggest(biggest["fn"])
+        self.__save_log_biggest(biggest)
 
         # print(f"File: {largest['fn']}")
         overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
@@ -355,7 +356,7 @@ class Pipeline:
 
         self.__draw_fov(lng, lat, heading, color="tab:blue")
 
-        mid_point = self.__find_draw_obj(biggest["interest"], lng, lat, heading)
+        self.__find_draw_obj(biggest["interest"], lng, lat, heading)
 
         if overlap == 0:
             self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
@@ -370,47 +371,35 @@ class Pipeline:
             clat = batch[0]["metadata"]["location"]["lat"]
             clng = batch[0]["metadata"]["location"]["lng"]
             self.__draw_cross(clng, clat, "tab:cyan")
-            for b in batch:
-                self.__save_log_img(b["fn"], b["img"])
+            self.__save_log_batch(batch)
             if self.lder.get_distance(lng, lat, clng, clat) > 0.001:
                 break
+
             self.curr_step += 1
-
             preds = self.pder.predict(batch)
-
             biggest = self.find_biggest(preds)
 
             if biggest["fn"] is None:
                 print(f"No {self.rls['interest'][0]} found at location")
                 break
-            else:
-                self.curr_step += 1
-                self.__save_log_img(
-                    biggest["fn"],
-                    show_mask(
-                        biggest["orig_img"],
-                        p_msk=biggest["interest"],
-                        n_msk=biggest["occluding"],
-                        show=False,
-                    ),
-                )
 
-                # print(f"File: {largest['fn']}")
-                overlap = np.logical_and(
-                    biggest["interest"], biggest["occluding"]
-                ).sum()
+            self.curr_step += 1
+            self.__save_log_biggest(biggest)
 
-                # Turns gsv heading into angle from horizontal
-                # 0->90, 90->0, 180->-90, 270->-180, 360->-270
-                heading = -int(biggest["fn"].split("_")[3]) + 90
-                print(f"heading: {heading}")
+            # print(f"File: {largest['fn']}")
+            overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
 
-                self.__draw_fov(clng, clat, heading, color="tab:cyan")
-                self.__find_draw_obj(biggest["interest"], clng, clat, heading)
+            # Turns gsv heading into angle from horizontal
+            # 0->90, 90->0, 180->-90, 270->-180, 360->-270
+            heading = -int(biggest["fn"].split("_")[3]) + 90
+            print(f"heading: {heading}")
 
-                if overlap == 0:
-                    self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
-                    break
+            self.__draw_fov(clng, clat, heading, color="tab:cyan")
+            self.__find_draw_obj(biggest["interest"], clng, clat, heading)
+
+            if overlap == 0:
+                self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
+                break
 
         self.__save_log_plt(biggest["fn"])
 
