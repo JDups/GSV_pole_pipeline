@@ -25,10 +25,11 @@ TODO: Check that obj_ids are actually present in data_df
 
 
 class Loader(ABC):
-    def __init__(self):
+    def __init__(self, csv_file):
         self.log_fp = None
         self.fov = 90
         self.iters = None
+        self.data_df = pd.read_csv(csv_file)
 
     @abstractmethod
     def get_batch(self, idn):
@@ -106,9 +107,8 @@ class ImgFetch(Loader):
 
 class GSVFetch(Loader):
     def __init__(self, csv_file, API_key, obj_ids=None, full_360=False):
-        super().__init__()
+        super().__init__(csv_file)
         self.source = "GSV"
-        self.data_df = pd.read_csv(csv_file)
         self.API_key = API_key
         self.full_360 = full_360
         if obj_ids:
@@ -228,10 +228,9 @@ class GSVFetch(Loader):
 
 class DCamFetch(Loader):
     def __init__(self, csv_file, tracks_fp, pics_fp, fov=140, obj_ids=None):
-        super().__init__()
+        super().__init__(csv_file)
         self.source = "Dashcam"
         self.fov = fov
-        self.data_df = pd.read_csv(csv_file)
         if obj_ids:
             self.obj_ids = np.array(obj_ids)
         else:
