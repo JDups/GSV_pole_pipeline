@@ -30,7 +30,7 @@ class Loader(ABC):
         self.fov = 90
         self.iters = None
         self.data_df = pd.read_csv(csv_file)
-        
+
         if obj_ids:
             self.obj_ids = np.array(obj_ids)
         else:

@@ -166,16 +166,19 @@ class Pipeline:
         return biggest
 
     def GSV_move(
-        self, lng, lat, heading, mid_point, img_w=640, strat="ortho", repo_len=0.0001
+        self, lng, lat, heading, strat="orthor", mid_point=0, img_w=640, repo_len=0.0001
     ):
         if strat == "backup":
             adj_angl = heading - 180 + 45 - mid_point / img_w * self.lder.fov
-        if strat == "ortho":
+        if strat == "orthor":
             adj_angl = heading - 90
+        if strat == "orthol":
+            adj_angl = heading + 90
 
         return get_end_coords(lng, lat, adj_angl, repo_len)
 
     def run_GSV(self, pid, batch):
+        # Original picture
         plat, plng = self.lder.fetch_latlng(pid)
         print(f"CSV lat: {plat} lng: {plng}")
         self.__draw_target(plng, plat)
@@ -201,6 +204,7 @@ class Pipeline:
 
         biggest = self.find_biggest(preds)
 
+        # If no picture is found
         if biggest["fn"] is None:
             print(f"No {self.rls['interest'][0]} found at location")
             self.__draw_batch_fov(lng, lat, batch)
@@ -228,15 +232,17 @@ class Pipeline:
 
         self.__draw_fov(lng, lat, heading, color="tab:blue")
 
-        mid_point = self.__find_draw_obj(biggest["interest"], lng, lat, heading)
+        self.__find_draw_obj(biggest["interest"], lng, lat, heading)
 
+        # If picture is good
         if overlap == 0:
             self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
             self.__save_log_plt(biggest["fn"])
             return
 
+        # First move
         self.curr_step = 3
-        nlng, nlat = self.GSV_move(lng, lat, heading, mid_point)
+        nlng, nlat = self.GSV_move(lng, lat, heading)
 
         self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
         self.__draw_cross(nlng, nlat, "tab:brown")
@@ -253,15 +259,59 @@ class Pipeline:
         est_heading = get_est_heading(clng, clat, plng, plat)
 
         self.curr_step = 4
-        new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)[0]
-
-        self.__save_log_img(new_pic["fn"], new_pic["img"], step_n="F")
+        new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)
 
         est_heading = -est_heading + 90
-
         self.__draw_fov(clng, clat, est_heading, color="tab:cyan")
 
-        self.__save_log_plt(biggest["fn"])
+        preds = self.pder.predict(new_pic)
+        biggest = self.find_biggest(preds)
+
+        self.curr_step = 5
+        self.__save_log_img(
+            biggest["fn"],
+            show_mask(
+                biggest["orig_img"],
+                p_msk=biggest["interest"],
+                n_msk=biggest["occluding"],
+                show=False,
+            ),
+        )
+        overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
+
+        # If picture is good
+        if overlap == 0:
+            self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
+            self.__save_log_plt(biggest["fn"])
+            return
+
+        # Second move
+        self.curr_step = 6
+        nlng, nlat = self.GSV_move(lng, lat, heading, "orthol")
+
+        self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
+        self.__draw_cross(nlng, nlat, "tab:brown")
+
+        est_heading = get_est_heading(nlng, nlat, plng, plat)
+
+        _, new_loc = self.lder.results_from_loc(nlat, nlng, est_heading)
+
+        clat = new_loc.metadata[0]["location"]["lat"]
+        clng = new_loc.metadata[0]["location"]["lng"]
+
+        self.__draw_cross(clng, clat, "tab:cyan")
+
+        est_heading = get_est_heading(clng, clat, plng, plat)
+
+        self.curr_step = 7
+        new_pic = self.lder.pic_from_loc(pid, clat, clng, est_heading)
+
+        est_heading = -est_heading + 90
+        self.__draw_fov(clng, clat, est_heading, color="tab:cyan")
+
+        self.__save_log_img(new_pic[0]["fn"], new_pic[0]["img"], step_n="F")
+
+        self.__save_log_plt(new_pic[0]["fn"])
 
     def run_DCam(self, pid, batch):
         plat, plng = self.lder.fetch_latlng(pid)
