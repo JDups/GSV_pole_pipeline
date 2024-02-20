@@ -229,7 +229,9 @@ class GSVFetch(Loader):
 
 
 class DCamFetch(Loader):
-    def __init__(self, csv_file, tracks_fp, pics_fp, fov=140, obj_ids=None):
+    def __init__(
+        self, csv_file, tracks_fp, pics_fp, fov=140, obj_ids=None, local=True
+    ):
         self.source = "Dashcam"
         self.id_col = "OBJECTID"
         super().__init__(csv_file, obj_ids)
@@ -239,6 +241,23 @@ class DCamFetch(Loader):
             print(p)
             l_df.append(self.load_gps_csv(p, pics_fp))
         self.tracks_df = pd.concat(l_df)
+
+        if local:
+            max_lng = self.tracks_df["Longitude(Deg)"].max()
+            min_lng = self.tracks_df["Longitude(Deg)"].min()
+            max_lat = self.tracks_df["Latitude(Deg)"].max()
+            min_lat = self.tracks_df["Latitude(Deg)"].min()
+
+            self.data_df = self.data_df[
+                (max_lng >= self.data_df["Long"])
+                & (min_lng <= self.data_df["Long"])
+                & (max_lat >= self.data_df["Lat"])
+                & (min_lat <= self.data_df["Lat"])
+            ]
+
+            self.obj_ids = (
+                self.data_df[self.id_col].sample(frac=1.0, random_state=42).unique()
+            )
 
     def fetch_latlng(self, pid):
         return self.data_df[self.data_df["OBJECTID"] == pid][["Lat", "Long"]].values[0]
