@@ -2,6 +2,9 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/GSV_pole_pipeline"]
+
 [project]
 name = "gsv_pole_pipeline"
 version = "0.0.2"
