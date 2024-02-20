@@ -229,9 +229,7 @@ class GSVFetch(Loader):
 
 
 class DCamFetch(Loader):
-    def __init__(
-        self, csv_file, tracks_fp, pics_fp, fov=140, obj_ids=None, local=True
-    ):
+    def __init__(self, csv_file, tracks_fp, pics_fp, fov=140, obj_ids=None, local=True):
         self.source = "Dashcam"
         self.id_col = "OBJECTID"
         super().__init__(csv_file, obj_ids)
