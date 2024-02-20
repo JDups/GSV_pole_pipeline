@@ -326,6 +326,7 @@ class Pipeline:
         print(f"{self.lder.source} lat: {lat} lng: {lng}")
         self.__draw_cross(lng, lat, "tab:blue")
         self.__save_log_batch(batch)
+        bfn = batch[0]["fn"]  # quick fix thing to save filename
 
         self.curr_step = 1
         preds = self.pder.predict(batch)
@@ -401,7 +402,7 @@ class Pipeline:
                 self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
                 break
 
-        self.__save_log_plt(biggest["fn"])
+        self.__save_log_plt(bfn)
 
     def run(self, iterations=None):
         self.lder.iters = iterations
