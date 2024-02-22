@@ -9,7 +9,7 @@ from io import BytesIO
 import numpy as np
 import math
 from abc import ABC, abstractmethod
-from utils import get_est_heading
+from .utils import get_est_heading
 import os
 import pickle
 
