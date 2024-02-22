@@ -3,8 +3,6 @@ from glob import glob
 import pandas as pd
 import cv2
 import google_streetview as gsv
-import google_streetview.helpers
-import google_streetview.api
 import requests
 from PIL import Image
 from io import BytesIO
