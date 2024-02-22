@@ -1,8 +1,6 @@
 import numpy as np
 from utils import show_mask, get_overlay, get_end_coords, get_est_heading
-import matplotlib
 import matplotlib.pyplot as plt
-import math
 import os
 import cv2
 
