@@ -44,6 +44,8 @@ class Pipeline:
             os.makedirs(self.log_fp, exist_ok=True)
             self.lder.set_log_fp(self.log_fp)
             self.fig, self.ax = plt.subplots()
+            self.ax.get_xaxis().set_visible(False)
+            self.ax.get_yaxis().set_visible(False)
             plt.axis("equal")
 
     def __save_fn(self, fn, step_n, post_str=""):
@@ -77,18 +79,20 @@ class Pipeline:
     def __save_log_plt(self, fn, post_str=""):
         if self.log_fp:
             fn = self.__save_fn(fn, "P", post_str)
-            plt.savefig(fn)
+            plt.savefig(fn, bbox_inches="tight")
 
-    def __draw_target(self, lng, lat, color="tab:red"):
+    def __draw_target(self, lng, lat, color="tab:red", out_size=15, in_size=3):
         if self.log_fp:
             self.ax.plot(
-                lng, lat, color=color, marker="o", markersize=20, fillstyle="none"
+                lng, lat, color=color, marker="o", markersize=out_size, fillstyle="none"
             )
-            self.ax.plot(lng, lat, color=color, marker="o", markersize=3)
+            self.ax.plot(lng, lat, color=color, marker="o", markersize=in_size)
 
     def __draw_cross(self, lng, lat, color="tab:red"):
         if self.log_fp:
-            self.ax.plot(lng, lat, color=color, marker="x", markersize=20)
+            self.ax.plot(
+                lng, lat, color=color, marker="x", markersize=15, markeredgewidth=2
+            )
 
     def __draw_lines(self, x, y, angles, line_len, **kwargs):
         if self.log_fp:
@@ -102,7 +106,7 @@ class Pipeline:
         if fov is None:
             fov = self.lder.fov
         if self.log_fp:
-            kwargs = {"color": color}
+            kwargs = {"color": color, "linestyle": (0, (5, 10))}
             angles = [heading - fov / 2, heading + fov / 2]
             self.__draw_lines(lng, lat, angles, view_len, **kwargs)
 
@@ -133,7 +137,7 @@ class Pipeline:
         edges_angles = [
             edge / img_w * fov for edge in [left_edge, mid_point, right_edge]
         ]
-        self.__draw_obj_span(lng, lat, heading, edges_angles, fov)
+        # self.__draw_obj_span(lng, lat, heading, edges_angles, fov)
 
         return mid_point
 
@@ -204,6 +208,7 @@ class Pipeline:
         lng = batch[0]["metadata"]["location"]["lng"]
         print(f"{self.lder.source} lat: {lat} lng: {lng}")
         self.__draw_cross(lng, lat, "tab:blue")
+        # self.__draw_target(lng, lat, "tab:blue", 10, 0)
         self.__save_log_batch(batch)
 
         self.curr_step = 1
@@ -248,8 +253,17 @@ class Pipeline:
         self.curr_step = 3
         nlng, nlat = self.GSV_move(lng, lat, heading)
 
-        self.ax.plot([lng, nlng], [lat, nlat], "tab:brown")
-        self.__draw_cross(nlng, nlat, "tab:brown")
+        self.ax.plot([lng, nlng], [lat, nlat], "tab:orange")
+        # TODO: turn into method
+        ang1 = -get_est_heading(lng, lat, nlng, nlat) - 90
+        print(f"ANGLE: {ang1}")
+        ang2 = ang1 + 25
+        ang3 = ang1 - 25
+        a1lng, a1lat = get_end_coords(nlng, nlat, ang2, 0.00002)
+        self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
+        a1lng, a1lat = get_end_coords(nlng, nlat, ang3, 0.00002)
+        self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
+        # self.__draw_cross(nlng, nlat, "tab:orange")
 
         est_heading = get_est_heading(nlng, nlat, plng, plat)
 

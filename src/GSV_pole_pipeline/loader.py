@@ -9,7 +9,7 @@ from io import BytesIO
 import numpy as np
 import math
 from abc import ABC, abstractmethod
-from .utils import get_est_heading
+from utils import get_est_heading
 import os
 import pickle
 
@@ -18,7 +18,6 @@ TODO: Can move up many methods to super calss with some modifications.
       Like setting data_df, IMGFetch will need it's own method to override though
 TODO: Load load_gps_csv should just be put into another script that runs when 
       making the gps tracks SO that they get formatted correctly from the begining
-TODO: Check that obj_ids are actually present in data_df
 """
 
 
@@ -30,6 +29,8 @@ class Loader(ABC):
         self.data_df = pd.read_csv(csv_file)
 
         if obj_ids:
+            if not obj_ids in self.data_df[self.id_col].values:
+                raise ValueError("ID not found in CSV")
             self.obj_ids = np.array(obj_ids)
         else:
             self.obj_ids = self.data_df[self.id_col].unique()
