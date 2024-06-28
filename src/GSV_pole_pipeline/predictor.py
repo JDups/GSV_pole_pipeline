@@ -1,14 +1,17 @@
 import numpy as np
 import pandas as pd
+
 # import inference
 from abc import ABC, abstractmethod
 from ultralytics import YOLO
 from groundingdino.util.inference import Model
 from segment_anything import sam_model_registry, SamPredictor
+
 # from omegaconf import OmegaConf
 # from ldm.util import create_carvekit_interface
 # from PIL import Image
 # import cv2
+
 
 class Predictor(ABC):
     def __init__(self):
@@ -301,34 +304,36 @@ class Pix2GestaltPredictor(Predictor):
         # self.p2g = inference.load_model_from_config(conf, p2g_weights_fp, device=device)
 
     def get_mask_from_pred(self, pred_image, thresholding=True):
-    """
-    Since pix2gestalt performs amodal completion and segmentation jointly,
-    the whole (amodal) object is synthesized on a white background.
+        """
+        Since pix2gestalt performs amodal completion and segmentation jointly,
+        the whole (amodal) object is synthesized on a white background.
 
-    We can either perform traditional thresholding or utilize a background removal /
-    matting tool to extract the amodal mask (alpha channel) from pred_image.
+        We can either perform traditional thresholding or utilize a background removal /
+        matting tool to extract the amodal mask (alpha channel) from pred_image.
 
-    For evaluation, we use direct thresholding. Below, we implement both.
-    While we didn't empirically verify this, matting should slightly improve
-    the amodal segmentation performance.
-    """
-    if thresholding:
-        gray_image = cv2.cvtColor(pred_image, cv2.COLOR_BGR2GRAY)
-        _, pred_mask = cv2.threshold(gray_image, 250, 255, cv2.THRESH_BINARY_INV)
-    else:
-        pred_image = Image.fromarray(pred_image)
-        interface = create_carvekit_interface()
-        amodal_rgba = np.array(interface([pred_image])[0])
-        alpha_channel = amodal_rgba[:, :, 3]
-        visible_mask = (alpha_channel > 0).astype(np.uint8) * 255
+        For evaluation, we use direct thresholding. Below, we implement both.
+        While we didn't empirically verify this, matting should slightly improve
+        the amodal segmentation performance.
+        """
+        if thresholding:
+            gray_image = cv2.cvtColor(pred_image, cv2.COLOR_BGR2GRAY)
+            _, pred_mask = cv2.threshold(gray_image, 250, 255, cv2.THRESH_BINARY_INV)
+        else:
+            pred_image = Image.fromarray(pred_image)
+            interface = create_carvekit_interface()
+            amodal_rgba = np.array(interface([pred_image])[0])
+            alpha_channel = amodal_rgba[:, :, 3]
+            visible_mask = (alpha_channel > 0).astype(np.uint8) * 255
 
-        rgb_visible_mask = np.zeros((visible_mask.shape[0], visible_mask.shape[1], 3), dtype=np.uint8)
-        rgb_visible_mask[:,:,0] = visible_mask
-        rgb_visible_mask[:,:,1] = visible_mask
-        rgb_visible_mask[:,:,2] = visible_mask # (256, 256, 3)
-        pred_mask = rgb_visible_mask
+            rgb_visible_mask = np.zeros(
+                (visible_mask.shape[0], visible_mask.shape[1], 3), dtype=np.uint8
+            )
+            rgb_visible_mask[:, :, 0] = visible_mask
+            rgb_visible_mask[:, :, 1] = visible_mask
+            rgb_visible_mask[:, :, 2] = visible_mask  # (256, 256, 3)
+            pred_mask = rgb_visible_mask
 
-    return pred_mask
+        return pred_mask
 
     def resize_preds(self, original_image, pred_reconstructions):
         height, width = original_image.shape[:2]
@@ -336,7 +341,9 @@ class Pix2GestaltPredictor(Predictor):
         resized_images, resized_amodal_masks = list(), list()
         for image in pred_reconstructions:
             # Resize image to match the size of original_image using Lanczos interpolation
-            resized_image = cv2.resize(image, (width, height), interpolation=cv2.INTER_LANCZOS4)
+            resized_image = cv2.resize(
+                image, (width, height), interpolation=cv2.INTER_LANCZOS4
+            )
             resized_image = Image.fromarray(resized_image)
             resized_images.append(resized_image)
 
@@ -373,7 +380,6 @@ class Pix2GestaltPredictor(Predictor):
                 amodal_masks.append(pred_mask)
 
                 _, amodal_masks = resize_preds(self, i["img"], outs)
-
 
             preds.append(
                 {
