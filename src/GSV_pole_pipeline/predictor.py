@@ -1,10 +1,14 @@
 import numpy as np
 import pandas as pd
+# import inference
 from abc import ABC, abstractmethod
 from ultralytics import YOLO
 from groundingdino.util.inference import Model
 from segment_anything import sam_model_registry, SamPredictor
-
+# from omegaconf import OmegaConf
+# from ldm.util import create_carvekit_interface
+# from PIL import Image
+# import cv2
 
 class Predictor(ABC):
     def __init__(self):
@@ -145,9 +149,10 @@ class YOLOPredictor(Predictor):
 
 
 class CombinedPredictor(Predictor):
-    def __init__(self, predictors):
+    def __init__(self, predictors, links={}):
         # predictors is a list of tuples of the format [("name", Predictor Object),]
         self.predictors = predictors
+        self.links = links
 
     def add_prefix(self, prefix, class_name):
         return prefix + "__" + class_name
@@ -156,7 +161,22 @@ class CombinedPredictor(Predictor):
         output_list = []
 
         for name, predictor in self.predictors:
-            preds = predictor.predict(images)
+            # print(name)
+            # print(output_list)
+            if name in self.links:
+                pass_preds = output_list
+                for i_p, p in enumerate(pass_preds):
+                    new_class, new_mask = [], []
+                    for i, c in enumerate(p["out"]["class"]):
+                        if c.split("__")[0] == self.links[name]:
+                            new_class.append(c)
+                            new_mask.append(p["out"]["mask"][i])
+                    pass_preds[i_p]["out"]["class"] = new_class
+                    pass_preds[i_p]["out"]["mask"] = new_mask
+
+                preds = predictor.predict(images, pass_preds)
+            else:
+                preds = predictor.predict(images)
 
             if not output_list:
                 output_list = [
@@ -267,6 +287,109 @@ class GroundedSAMPredictor(Predictor):
                 fn=img["fn"],
                 clss=img["classes"],
                 mask=list(img["result"].mask),
+                img=img["img"],
+                full=img["result"],
+            )
+            for img in preds
+        ]
+
+
+class Pix2GestaltPredictor(Predictor):
+    def __init__(self, p2g_conf_fp, p2g_weights_fp, weights_fp, device=None):
+        pass
+        # conf = OmegaConf.load(p2g_conf_fp)
+        # self.p2g = inference.load_model_from_config(conf, p2g_weights_fp, device=device)
+
+    def get_mask_from_pred(self, pred_image, thresholding=True):
+    """
+    Since pix2gestalt performs amodal completion and segmentation jointly,
+    the whole (amodal) object is synthesized on a white background.
+
+    We can either perform traditional thresholding or utilize a background removal /
+    matting tool to extract the amodal mask (alpha channel) from pred_image.
+
+    For evaluation, we use direct thresholding. Below, we implement both.
+    While we didn't empirically verify this, matting should slightly improve
+    the amodal segmentation performance.
+    """
+    if thresholding:
+        gray_image = cv2.cvtColor(pred_image, cv2.COLOR_BGR2GRAY)
+        _, pred_mask = cv2.threshold(gray_image, 250, 255, cv2.THRESH_BINARY_INV)
+    else:
+        pred_image = Image.fromarray(pred_image)
+        interface = create_carvekit_interface()
+        amodal_rgba = np.array(interface([pred_image])[0])
+        alpha_channel = amodal_rgba[:, :, 3]
+        visible_mask = (alpha_channel > 0).astype(np.uint8) * 255
+
+        rgb_visible_mask = np.zeros((visible_mask.shape[0], visible_mask.shape[1], 3), dtype=np.uint8)
+        rgb_visible_mask[:,:,0] = visible_mask
+        rgb_visible_mask[:,:,1] = visible_mask
+        rgb_visible_mask[:,:,2] = visible_mask # (256, 256, 3)
+        pred_mask = rgb_visible_mask
+
+    return pred_mask
+
+    def resize_preds(self, original_image, pred_reconstructions):
+        height, width = original_image.shape[:2]
+
+        resized_images, resized_amodal_masks = list(), list()
+        for image in pred_reconstructions:
+            # Resize image to match the size of original_image using Lanczos interpolation
+            resized_image = cv2.resize(image, (width, height), interpolation=cv2.INTER_LANCZOS4)
+            resized_image = Image.fromarray(resized_image)
+            resized_images.append(resized_image)
+
+            pred_mask = self.get_mask_from_pred(resized_image)
+            resized_amodal_masks.append(Image.fromarray(pred_mask))
+
+        return resized_images, resized_amodal_masks
+
+    def predict(self, images, prev_preds):
+        preds = []
+
+        for i in images:
+            amodal_masks, v_mask_list, class_list = [], [], []
+            # print(i.keys())
+            for p in prev_preds:
+                # print(p)
+                if i["fn"] == p["fn"]:
+                    v_mask_list = p["out"]["mask"]
+                    class_list = p["out"]["class"]
+
+            for i, v_mask in enumerate(v_mask_list):
+                print(v_mask)
+                outs = inference.run_inference(
+                    input_image=cv2.resize(i["img"], (256, 256)),
+                    visible_mask=cv2.resize(v_mask, (256, 256)),
+                    model=self.p2g,
+                    guidance_scale=2.0,
+                    n_samples=1,
+                    ddim_steps=200,
+                )
+
+                for pred in outs:
+                    pred_mask = self.get_mask_from_pred(pred, thresholding=True)
+                amodal_masks.append(pred_mask)
+
+                _, amodal_masks = resize_preds(self, i["img"], outs)
+
+
+            preds.append(
+                {
+                    "fn": i["fn"],
+                    "classes": class_list,
+                    "mask": amodal_masks,
+                    "img": i["img"],
+                    "result": outs,
+                }
+            )
+
+        return [
+            self.output_dict(
+                fn=img["fn"],
+                clss=img["classes"],
+                mask=list(img["mask"]),
                 img=img["img"],
                 full=img["result"],
             )
