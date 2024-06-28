@@ -1,16 +1,16 @@
 import numpy as np
 import pandas as pd
 
-# import inference
+import inference
 from abc import ABC, abstractmethod
 from ultralytics import YOLO
 from groundingdino.util.inference import Model
 from segment_anything import sam_model_registry, SamPredictor
 
-# from omegaconf import OmegaConf
-# from ldm.util import create_carvekit_interface
-# from PIL import Image
-# import cv2
+from omegaconf import OmegaConf
+from ldm.util import create_carvekit_interface
+from PIL import Image
+import cv2
 
 
 class Predictor(ABC):
