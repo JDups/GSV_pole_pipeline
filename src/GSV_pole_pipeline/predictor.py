@@ -363,7 +363,7 @@ class Pix2GestaltPredictor(Predictor):
                     v_mask_list = p["out"]["mask"]
                     class_list = p["out"]["class"]
 
-            for i, v_mask in enumerate(v_mask_list):
+            for v_mask in v_mask_list:
                 print(v_mask)
                 outs = inference.run_inference(
                     input_image=cv2.resize(i["img"], (256, 256)),
