@@ -298,10 +298,9 @@ class GroundedSAMPredictor(Predictor):
 
 
 class Pix2GestaltPredictor(Predictor):
-    def __init__(self, p2g_conf_fp, p2g_weights_fp, weights_fp, device=None):
-        pass
-        # conf = OmegaConf.load(p2g_conf_fp)
-        # self.p2g = inference.load_model_from_config(conf, p2g_weights_fp, device=device)
+    def __init__(self, conf_fp, weights_fp, device=None):
+        conf = OmegaConf.load(conf_fp)
+        self.p2g = inference.load_model_from_config(conf, weights_fp, device=device)
 
     def get_mask_from_pred(self, pred_image, thresholding=True):
         """
