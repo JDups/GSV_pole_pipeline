@@ -315,7 +315,8 @@ class Pix2GestaltPredictor(Predictor):
         the amodal segmentation performance.
         """
         if thresholding:
-            gray_image = cv2.cvtColor(pred_image, cv2.COLOR_BGR2GRAY)
+            # TODO: find better fix, pred_image should already be array at this point, unsure why it isn't
+            gray_image = cv2.cvtColor(np.array(pred_image), cv2.COLOR_BGR2GRAY)
             _, pred_mask = cv2.threshold(gray_image, 250, 255, cv2.THRESH_BINARY_INV)
         else:
             pred_image = Image.fromarray(pred_image)
@@ -347,7 +348,7 @@ class Pix2GestaltPredictor(Predictor):
             resized_images.append(resized_image)
 
             pred_mask = self.get_mask_from_pred(resized_image)
-            resized_amodal_masks.append(Image.fromarray(pred_mask))
+            resized_amodal_masks.append(pred_mask)
 
         return resized_images, resized_amodal_masks
 
@@ -367,7 +368,9 @@ class Pix2GestaltPredictor(Predictor):
                 print(v_mask)
                 outs = inference.run_inference(
                     input_image=cv2.resize(i["img"], (256, 256)),
-                    visible_mask=cv2.resize(v_mask, (256, 256)),
+                    visible_mask=cv2.resize(
+                        (v_mask * 255).astype(np.uint8), (256, 256)
+                    ),
                     model=self.p2g,
                     guidance_scale=2.0,
                     n_samples=1,
@@ -378,7 +381,7 @@ class Pix2GestaltPredictor(Predictor):
                     pred_mask = self.get_mask_from_pred(pred, thresholding=True)
                 amodal_masks.append(pred_mask)
 
-                _, amodal_masks = resize_preds(self, i["img"], outs)
+                _, amodal_masks = self.resize_preds(i["img"], outs)
 
             preds.append(
                 {
