@@ -348,6 +348,8 @@ class Pix2GestaltPredictor(Predictor):
             resized_images.append(resized_image)
 
             pred_mask = self.get_mask_from_pred(resized_image)
+            plt.imshow(pred_mask)
+            plt.show()
             resized_amodal_masks.append(pred_mask)
 
         return resized_images, resized_amodal_masks
