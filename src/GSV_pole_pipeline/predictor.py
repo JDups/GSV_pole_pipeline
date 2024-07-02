@@ -12,6 +12,8 @@ from ldm.util import create_carvekit_interface
 from PIL import Image
 import cv2
 
+import matplotlib.pyplot as plt  # fro p2g debugging
+
 
 class Predictor(ABC):
     def __init__(self):
@@ -376,12 +378,12 @@ class Pix2GestaltPredictor(Predictor):
                     model=self.p2g,
                     guidance_scale=2.0,
                     n_samples=1,
-                    ddim_steps=200,
+                    ddim_steps=25,  # 200
                 )
 
                 for pred in outs:
                     pred_mask = self.get_mask_from_pred(pred, thresholding=True)
-                amodal_masks.append(pred_mask)
+                    amodal_masks.append(pred_mask)
 
                 _, amodal_masks = self.resize_preds(i["img"], outs)
 
