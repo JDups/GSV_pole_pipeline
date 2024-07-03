@@ -304,11 +304,13 @@ class Pix2GestaltPredictor(Predictor):
         self,
         conf_fp,
         weights_fp,
+        target_class=[],
         device=None,
         guidance_scale=2.0,
         n_samples=1,
         ddim_steps=200,
     ):
+        self.target_class = target_class
         self.guidance_scale = guidance_scale
         self.n_samples = n_samples
         self.ddim_steps = ddim_steps
@@ -361,8 +363,6 @@ class Pix2GestaltPredictor(Predictor):
             resized_images.append(resized_image)
 
             pred_mask = self.get_mask_from_pred(resized_image)
-            plt.imshow(pred_mask)
-            plt.show()
             resized_amodal_masks.append(pred_mask)
 
         return resized_images, resized_amodal_masks
@@ -370,19 +370,27 @@ class Pix2GestaltPredictor(Predictor):
     def predict(self, images, prev_preds):
         preds = []
 
-        for i in images:
+        for im in images:
             amodal_masks, v_mask_list, class_list, outs = [], [], [], []
-            # print(i.keys())
+
             for p in prev_preds:
-                # print(p)
-                if i["fn"] == p["fn"]:
+                if im["fn"] == p["fn"]:
                     v_mask_list = p["out"]["mask"]
                     class_list = p["out"]["class"]
+
+            if self.target_class:
+                target_idx = [
+                    i
+                    for i in range(len(class_list))
+                    if class_list[i] in self.target_class
+                ]
+                v_mask_list = [v_mask_list[i] for i in target_idx]
+                class_list = [class_list[i] for i in target_idx]
 
             for v_mask in v_mask_list:
                 print(v_mask)
                 outs += inference.run_inference(
-                    input_image=cv2.resize(i["img"], (256, 256)),
+                    input_image=cv2.resize(im["img"], (256, 256)),
                     visible_mask=cv2.resize(
                         (v_mask * 255).astype(np.uint8), (256, 256)
                     ),
@@ -392,15 +400,15 @@ class Pix2GestaltPredictor(Predictor):
                     ddim_steps=self.ddim_steps,
                 )
 
-            _, amodal_masks = self.resize_preds(i["img"], outs)
+            _, amodal_masks = self.resize_preds(im["img"], outs)
             amodal_masks = [m.astype(bool) for m in amodal_masks]
 
             preds.append(
                 {
-                    "fn": i["fn"],
+                    "fn": im["fn"],
                     "classes": class_list,
                     "mask": amodal_masks,
-                    "img": i["img"],
+                    "img": im["img"],
                     "result": outs,
                 }
             )

@@ -156,9 +156,6 @@ class Pipeline:
             occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
             for mcntr, (clss, m) in enumerate(zip(p["out"]["class"], p["out"]["mask"])):
-                print(m)
-                plt.imshow(m)
-                plt.show()
                 self.__save_log_img(
                     p["fn"],
                     show_mask(p["orig_img"], p_msk=m, show=False),
