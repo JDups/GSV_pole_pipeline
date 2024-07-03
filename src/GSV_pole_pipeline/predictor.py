@@ -360,7 +360,7 @@ class Pix2GestaltPredictor(Predictor):
         preds = []
 
         for i in images:
-            amodal_masks, v_mask_list, class_list = [], [], []
+            amodal_masks, v_mask_list, class_list, outs = [], [], [], []
             # print(i.keys())
             for p in prev_preds:
                 # print(p)
@@ -370,7 +370,7 @@ class Pix2GestaltPredictor(Predictor):
 
             for v_mask in v_mask_list:
                 print(v_mask)
-                outs = inference.run_inference(
+                outs += inference.run_inference(
                     input_image=cv2.resize(i["img"], (256, 256)),
                     visible_mask=cv2.resize(
                         (v_mask * 255).astype(np.uint8), (256, 256)
@@ -381,11 +381,8 @@ class Pix2GestaltPredictor(Predictor):
                     ddim_steps=25,  # 200
                 )
 
-                for pred in outs:
-                    pred_mask = self.get_mask_from_pred(pred, thresholding=True)
-                    amodal_masks.append(pred_mask)
-
-                _, amodal_masks = self.resize_preds(i["img"], outs)
+            _, amodal_masks = self.resize_preds(i["img"], outs)
+            amodal_masks = [m.astype(bool) for m in amodal_masks]
 
             preds.append(
                 {
