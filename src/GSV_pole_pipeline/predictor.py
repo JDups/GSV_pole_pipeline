@@ -300,7 +300,18 @@ class GroundedSAMPredictor(Predictor):
 
 
 class Pix2GestaltPredictor(Predictor):
-    def __init__(self, conf_fp, weights_fp, device=None):
+    def __init__(
+        self,
+        conf_fp,
+        weights_fp,
+        device=None,
+        guidance_scale=2.0,
+        n_samples=1,
+        ddim_steps=200,
+    ):
+        self.guidance_scale = guidance_scale
+        self.n_samples = n_samples
+        self.ddim_steps = ddim_steps
         conf = OmegaConf.load(conf_fp)
         self.p2g = inference.load_model_from_config(conf, weights_fp, device=device)
 
@@ -376,9 +387,9 @@ class Pix2GestaltPredictor(Predictor):
                         (v_mask * 255).astype(np.uint8), (256, 256)
                     ),
                     model=self.p2g,
-                    guidance_scale=2.0,
-                    n_samples=1,
-                    ddim_steps=25,  # 200
+                    guidance_scale=self.guidance_scale,
+                    n_samples=self.n_samples,
+                    ddim_steps=self.ddim_steps,
                 )
 
             _, amodal_masks = self.resize_preds(i["img"], outs)
