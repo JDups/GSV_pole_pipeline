@@ -7,7 +7,7 @@ from groundingdino.util.inference import Model
 from segment_anything import sam_model_registry, SamPredictor
 
 from omegaconf import OmegaConf
-from ldm.util import create_carvekit_interface
+# from ldm.util import create_carvekit_interface
 from PIL import Image
 import cv2
 
@@ -336,19 +336,20 @@ class Pix2GestaltPredictor(Predictor):
             gray_image = cv2.cvtColor(np.array(pred_image), cv2.COLOR_BGR2GRAY)
             _, pred_mask = cv2.threshold(gray_image, 250, 255, cv2.THRESH_BINARY_INV)
         else:
-            pred_image = Image.fromarray(pred_image)
-            interface = create_carvekit_interface()
-            amodal_rgba = np.array(interface([pred_image])[0])
-            alpha_channel = amodal_rgba[:, :, 3]
-            visible_mask = (alpha_channel > 0).astype(np.uint8) * 255
+            raise("Not yet implemented")
+            # pred_image = Image.fromarray(pred_image)
+            # interface = create_carvekit_interface()
+            # amodal_rgba = np.array(interface([pred_image])[0])
+            # alpha_channel = amodal_rgba[:, :, 3]
+            # visible_mask = (alpha_channel > 0).astype(np.uint8) * 255
 
-            rgb_visible_mask = np.zeros(
-                (visible_mask.shape[0], visible_mask.shape[1], 3), dtype=np.uint8
-            )
-            rgb_visible_mask[:, :, 0] = visible_mask
-            rgb_visible_mask[:, :, 1] = visible_mask
-            rgb_visible_mask[:, :, 2] = visible_mask  # (256, 256, 3)
-            pred_mask = rgb_visible_mask
+            # rgb_visible_mask = np.zeros(
+            #     (visible_mask.shape[0], visible_mask.shape[1], 3), dtype=np.uint8
+            # )
+            # rgb_visible_mask[:, :, 0] = visible_mask
+            # rgb_visible_mask[:, :, 1] = visible_mask
+            # rgb_visible_mask[:, :, 2] = visible_mask  # (256, 256, 3)
+            # pred_mask = rgb_visible_mask
 
         return pred_mask
 
