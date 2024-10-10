@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 
-import inference
 from abc import ABC, abstractmethod
 from ultralytics import YOLO
 from groundingdino.util.inference import Model
@@ -14,6 +13,9 @@ import cv2
 
 import matplotlib.pyplot as plt  # fro p2g debugging
 
+import sys
+sys.path.append('/data/jonathandupuis/pix2gestalt/pix2gestalt') # for VM
+import inference
 
 class Predictor(ABC):
     def __init__(self):
