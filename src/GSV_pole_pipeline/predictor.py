@@ -360,7 +360,8 @@ class Pix2GestaltPredictor(Predictor):
     def resize_preds(self, original_image, pred_reconstructions):
         height, width = original_image.shape[:2]
 
-        resized_images, resized_amodal_masks = list(), list()
+        resized_images = []
+        # resized_amodal_masks = []
         for image in pred_reconstructions:
             # Resize image to match the size of original_image using Lanczos interpolation
             resized_image = cv2.resize(
@@ -369,10 +370,10 @@ class Pix2GestaltPredictor(Predictor):
             resized_image = Image.fromarray(resized_image)
             resized_images.append(resized_image)
 
-            pred_mask = self.get_mask_from_pred(resized_image)
-            resized_amodal_masks.append(pred_mask)
+            # pred_mask = self.get_mask_from_pred(resized_image)
+            # resized_amodal_masks.append(pred_mask)
 
-        return resized_images, resized_amodal_masks
+        return resized_images#, resized_amodal_masks
 
     def predict(self, images, prev_preds):
         preds = []
@@ -394,9 +395,10 @@ class Pix2GestaltPredictor(Predictor):
                 v_mask_list = [v_mask_list[i] for i in target_idx]
                 class_list = [class_list[i] for i in target_idx]
 
+            preds = []
             for v_mask in v_mask_list:
                 print(v_mask)
-                outs += inference.run_inference(
+                outs = inference.run_inference(
                     input_image=cv2.resize(im["img"], (256, 256)),
                     visible_mask=cv2.resize(
                         (v_mask * 255).astype(np.uint8), (256, 256), interpolation=cv2.INTER_NEAREST
@@ -406,8 +408,11 @@ class Pix2GestaltPredictor(Predictor):
                     n_samples=self.n_samples,
                     ddim_steps=self.ddim_steps,
                 )
+                if self.mask_type == "single":
+                    preds += self.get_mask_from_pred(outs[0])
 
-            _, amodal_masks = self.resize_preds(im["img"], outs)
+            # _, amodal_masks = self.resize_preds(im["img"], preds)
+            amodal_masks = self.resize_preds(im["img"], preds)
             amodal_masks = [m.astype(bool) for m in amodal_masks]
 
             preds.append(
