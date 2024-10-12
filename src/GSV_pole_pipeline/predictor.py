@@ -311,13 +311,15 @@ class Pix2GestaltPredictor(Predictor):
         guidance_scale=2.0,
         n_samples=1,
         ddim_steps=200,
-        mask_type="single"
+        mask_type="single",
+        vote_count=1,
     ):
         self.target_class = target_class
         self.guidance_scale = guidance_scale
         self.n_samples = n_samples
         self.ddim_steps = ddim_steps
         self.mask_type = mask_type
+        self.vote_count = vote_count
         if self.mask_type == "single" and self.n_samples > 1:
             print(f"n_samples set to {self.n_samples} but mask_typeset to single, samples after 1st will be discarded.")
         conf = OmegaConf.load(conf_fp)
@@ -365,7 +367,7 @@ class Pix2GestaltPredictor(Predictor):
             # Resize image to match the size of original_image using Lanczos interpolation
             resized_images.append(
                 cv2.resize(
-                    # image, (width, height), interpolation=cv2.INTER_LANCZOS4
+                    # image, (width, height), interpolation=cv2.INTER_NEAREST
                     image, (width, height), interpolation=cv2.INTER_LINEAR
                 )
             )
@@ -406,8 +408,17 @@ class Pix2GestaltPredictor(Predictor):
                     ddim_steps=self.ddim_steps,
                 )
                 all_outs += outs
+
                 if self.mask_type == "single":
                     pred_mask.append(self.get_mask_from_pred(outs[0]))
+                    
+                if self.mask_type == "voting":
+                    sum_preds = np.zeros((256, 256))
+                    for out in enumerate(outs):
+                        out_mask = self.get_mask_from_pred(out)
+                        sum_preds = sum_preds + out_mask.astype(int)/255
+                    vote_preds = sum_preds > self.vote_count
+                    pred_mask.append(vote_preds)
 
             resized_masks = self.resize_preds(im["img"], pred_mask)
             amodal_masks = [m.astype(bool) for m in pred_mask]
