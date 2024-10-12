@@ -420,7 +420,7 @@ class Pix2GestaltPredictor(Predictor):
                     vote_preds = sum_preds > self.vote_count
                     pred_mask.append(vote_preds*255)
 
-            print(len(pred_mask))
+            print(pred_mask)
             resized_masks = self.resize_preds(im["img"], pred_mask)
             amodal_masks = [m.astype(bool) for m in pred_mask]
             resized_masks = [m.astype(bool) for m in resized_masks]
