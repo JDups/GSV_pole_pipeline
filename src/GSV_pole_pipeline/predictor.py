@@ -311,11 +311,15 @@ class Pix2GestaltPredictor(Predictor):
         guidance_scale=2.0,
         n_samples=1,
         ddim_steps=200,
+        mask_type="single"
     ):
         self.target_class = target_class
         self.guidance_scale = guidance_scale
         self.n_samples = n_samples
         self.ddim_steps = ddim_steps
+        self.mask_type = mask_type
+        if self.mask_type == "single" and self.n_samples > 1:
+            print(f"n_samples set to {self.n_samples} but mask_typeset to single, samples after 1st will be discarded.")
         conf = OmegaConf.load(conf_fp)
         self.p2g = inference.load_model_from_config(conf, weights_fp, device=device)
 
@@ -395,7 +399,7 @@ class Pix2GestaltPredictor(Predictor):
                 outs += inference.run_inference(
                     input_image=cv2.resize(im["img"], (256, 256)),
                     visible_mask=cv2.resize(
-                        (v_mask * 255).astype(np.uint8), (256, 256)
+                        (v_mask * 255).astype(np.uint8), (256, 256), interpolation=cv2.INTER_NEAREST
                     ),
                     model=self.p2g,
                     guidance_scale=self.guidance_scale,
