@@ -422,6 +422,7 @@ class Pix2GestaltPredictor(Predictor):
                     
                 if self.mask_type == "trim":
                     out_areas = []
+                    mid_sum_preds = np.zeros((256, 256))
                     for out in outs:
                         out_mask = self.get_mask_from_pred(out)
                         out_areas.append(np.count_nonzero(out_mask))
