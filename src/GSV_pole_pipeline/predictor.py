@@ -361,20 +361,16 @@ class Pix2GestaltPredictor(Predictor):
         height, width = original_image.shape[:2]
 
         resized_images = []
-        # resized_amodal_masks = []
         for image in pred_reconstructions:
             # Resize image to match the size of original_image using Lanczos interpolation
-            resized_image = cv2.resize(
-                # image, (width, height), interpolation=cv2.INTER_LANCZOS4
-                image, (width, height), interpolation=cv2.INTER_LANCZOS4
+            resized_images.append(
+                cv2.resize(
+                    # image, (width, height), interpolation=cv2.INTER_LANCZOS4
+                    image, (width, height), interpolation=cv2.INTER_NEAREST
+                )
             )
-            # resized_image = Image.fromarray(resized_image)
-            resized_images.append(resized_image)
 
-            # pred_mask = self.get_mask_from_pred(resized_image)
-            # resized_amodal_masks.append(pred_mask)
-
-        return resized_images#, resized_amodal_masks
+        return resized_images
 
     def predict(self, images, prev_preds):
         preds = []
@@ -413,7 +409,6 @@ class Pix2GestaltPredictor(Predictor):
                 if self.mask_type == "single":
                     pred_mask.append(self.get_mask_from_pred(outs[0]))
 
-            # _, amodal_masks = self.resize_preds(im["img"], outs)
             resized_masks = self.resize_preds(im["img"], pred_mask)
             amodal_masks = [m.astype(bool) for m in pred_mask]
             resized_masks = [m.astype(bool) for m in resized_masks]
