@@ -365,6 +365,7 @@ class Pix2GestaltPredictor(Predictor):
         for image in pred_reconstructions:
             # Resize image to match the size of original_image using Lanczos interpolation
             resized_image = cv2.resize(
+                # image, (width, height), interpolation=cv2.INTER_LANCZOS4
                 image, (width, height), interpolation=cv2.INTER_LANCZOS4
             )
             # resized_image = Image.fromarray(resized_image)
@@ -421,7 +422,7 @@ class Pix2GestaltPredictor(Predictor):
                 {
                     "fn": im["fn"],
                     "classes": class_list,
-                    "mask": amodal_masks,
+                    "mask": resized_masks,
                     "img": im["img"],
                     "result": {
                         "amodal_masks": amodal_masks,
