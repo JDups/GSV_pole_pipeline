@@ -379,7 +379,7 @@ class Pix2GestaltPredictor(Predictor):
         preds = []
 
         for im in images:
-            amodal_masks, v_mask_list, class_list, outs = [], [], [], []
+            amodal_masks, v_mask_list, class_list, all_outs = [], [], [], []
 
             for p in prev_preds:
                 if im["fn"] == p["fn"]:
@@ -408,12 +408,14 @@ class Pix2GestaltPredictor(Predictor):
                     n_samples=self.n_samples,
                     ddim_steps=self.ddim_steps,
                 )
+                all_outs += outs
                 if self.mask_type == "single":
                     pred_mask.append(self.get_mask_from_pred(outs[0]))
 
             # _, amodal_masks = self.resize_preds(im["img"], outs)
-            amodal_masks = self.resize_preds(im["img"], pred_mask)
-            amodal_masks = [m.astype(bool) for m in amodal_masks]
+            resized_masks = self.resize_preds(im["img"], pred_mask)
+            amodal_masks = [m.astype(bool) for m in pred_mask]
+            resized_masks = [m.astype(bool) for m in resized_masks]
 
             preds.append(
                 {
@@ -421,7 +423,11 @@ class Pix2GestaltPredictor(Predictor):
                     "classes": class_list,
                     "mask": amodal_masks,
                     "img": im["img"],
-                    "result": outs,
+                    "result": {
+                        "amodal_masks": amodal_masks,
+                        "resized_masks": resized_masks,
+                        "outs": all_outs,
+                        },
                 }
             )
 
