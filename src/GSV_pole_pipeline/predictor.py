@@ -414,7 +414,7 @@ class Pix2GestaltPredictor(Predictor):
                     
                 if self.mask_type == "voting":
                     sum_preds = np.zeros((256, 256))
-                    for out in enumerate(outs):
+                    for out in outs:
                         out_mask = self.get_mask_from_pred(out)
                         sum_preds = sum_preds + out_mask.astype(int)/255
                     vote_preds = sum_preds > self.vote_count
