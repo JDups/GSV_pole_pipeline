@@ -395,7 +395,7 @@ class Pix2GestaltPredictor(Predictor):
                 v_mask_list = [v_mask_list[i] for i in target_idx]
                 class_list = [class_list[i] for i in target_idx]
 
-            preds = []
+            pred_mask = []
             for v_mask in v_mask_list:
                 print(v_mask)
                 outs = inference.run_inference(
@@ -409,10 +409,10 @@ class Pix2GestaltPredictor(Predictor):
                     ddim_steps=self.ddim_steps,
                 )
                 if self.mask_type == "single":
-                    preds.append(self.get_mask_from_pred(outs[0]))
+                    pred_mask.append(self.get_mask_from_pred(outs[0]))
 
-            # _, amodal_masks = self.resize_preds(im["img"], preds)
-            amodal_masks = self.resize_preds(im["img"], preds)
+            # _, amodal_masks = self.resize_preds(im["img"], outs)
+            amodal_masks = self.resize_preds(im["img"], pred_mask)
             amodal_masks = [m.astype(bool) for m in amodal_masks]
 
             preds.append(
