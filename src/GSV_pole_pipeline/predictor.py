@@ -367,7 +367,7 @@ class Pix2GestaltPredictor(Predictor):
             resized_image = cv2.resize(
                 image, (width, height), interpolation=cv2.INTER_LANCZOS4
             )
-            resized_image = Image.fromarray(resized_image)
+            # resized_image = Image.fromarray(resized_image)
             resized_images.append(resized_image)
 
             # pred_mask = self.get_mask_from_pred(resized_image)
