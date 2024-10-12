@@ -419,6 +419,27 @@ class Pix2GestaltPredictor(Predictor):
                         sum_preds = sum_preds + out_mask.astype(int)/255
                     vote_preds = sum_preds > self.vote_count
                     pred_mask.append((vote_preds*255).astype(np.uint8))
+                    
+                if self.mask_type == "trim":
+                    out_areas = []
+                    for out in outs:
+                        out_mask = self.get_mask_from_pred(out)
+                        out_areas.append(np.count_nonzero(out_mask))
+
+                    min_mask = np.argmin(out_areas)
+                    max_mask = np.argmax(out_areas)
+                        
+                    for pred_index, out in enumerate(outs):
+                        if pred_index in [min_mask, max_mask]:
+                            continue
+                        else:
+                            out_mask = self.get_mask_from_pred(out)
+                            mid_sum_preds = mid_sum_preds + out_mask.astype(int)/255
+
+                    mid_sum_preds = mid_sum_preds > 1
+                    pred_mask.append((mid_sum_preds*255).astype(np.uint8))
+
+
 
             resized_masks = self.resize_preds(im["img"], pred_mask)
             amodal_masks = [m.astype(bool) for m in pred_mask]
