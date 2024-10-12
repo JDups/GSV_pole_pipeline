@@ -366,7 +366,7 @@ class Pix2GestaltPredictor(Predictor):
             resized_images.append(
                 cv2.resize(
                     # image, (width, height), interpolation=cv2.INTER_LANCZOS4
-                    image, (width, height), interpolation=cv2.INTER_NEAREST
+                    image, (width, height), interpolation=cv2.INTER_LINEAR
                 )
             )
 
