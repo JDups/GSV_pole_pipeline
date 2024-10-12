@@ -409,7 +409,7 @@ class Pix2GestaltPredictor(Predictor):
                     ddim_steps=self.ddim_steps,
                 )
                 if self.mask_type == "single":
-                    preds += self.get_mask_from_pred(outs[0])
+                    preds.append(self.get_mask_from_pred(outs[0]))
 
             # _, amodal_masks = self.resize_preds(im["img"], preds)
             amodal_masks = self.resize_preds(im["img"], preds)
