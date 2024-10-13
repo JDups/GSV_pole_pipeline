@@ -200,9 +200,9 @@ class Pipeline:
         return biggest
     
     def move_decision(self, biggest):
-        if self.decision() == "area":
+        if self.decision == "area":
             return self.area_decision(biggest)
-        if self.decision() == "classifier":
+        if self.decision == "classifier":
             return False
 
     def area_decision(self, biggest):
