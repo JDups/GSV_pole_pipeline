@@ -81,6 +81,10 @@ class Pipeline:
             fn = self.__save_fn(fn, "P", post_str)
             plt.savefig(fn, bbox_inches="tight")
 
+    def __save_final(self, filename, image):
+        self.__save_log_img(filename, image, step_n="F")
+        self.__save_log_plt(filename)
+
     def __draw_target(self, lng, lat, color="tab:red", out_size=15, in_size=3):
         if self.log_fp:
             self.ax.plot(
@@ -117,7 +121,6 @@ class Pipeline:
 
     def __draw_move_arrow(self, lng, nlng, lat, nlat):
         self.ax.plot([lng, nlng], [lat, nlat], "tab:orange")
-        # TODO: turn into method
         ang1 = -get_est_heading(lng, lat, nlng, nlat) - 90
         print(f"ANGLE: {ang1}")
         ang2 = ang1 + 25
@@ -245,8 +248,6 @@ class Pipeline:
         self.__save_log_biggest(biggest)
 
         # print(f"File: {largest['fn']}")
-        overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
-
         # Turns gsv heading into angle from horizontal
         # 0->90, 90->0, 180->-90, 270->-180, 360->-270
         heading = -int(biggest["fn"].split("_")[3]) + 90
@@ -256,27 +257,20 @@ class Pipeline:
 
         self.__find_draw_obj(biggest["interest"], lng, lat, heading)
 
-        # If picture is good
+        overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
         if overlap == 0:
-            self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
-            self.__save_log_plt(biggest["fn"])
+            good_image = True
+        else:
+            good_image = False
+        # If picture is good
+        if good_image:
+            self.__save_final(biggest["fn"], biggest["orig_img"])
             return
 
         # First move
         self.curr_step = 3
         nlng, nlat = self.GSV_move(lng, lat, heading)
 
-        # self.ax.plot([lng, nlng], [lat, nlat], "tab:orange")
-        # # TODO: turn into method
-        # ang1 = -get_est_heading(lng, lat, nlng, nlat) - 90
-        # print(f"ANGLE: {ang1}")
-        # ang2 = ang1 + 25
-        # ang3 = ang1 - 25
-        # a1lng, a1lat = get_end_coords(nlng, nlat, ang2, 0.00002)
-        # self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
-        # a1lng, a1lat = get_end_coords(nlng, nlat, ang3, 0.00002)
-        # self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
-        # # self.__draw_cross(nlng, nlat, "tab:orange")
         self.__draw_move_arrow(lng, nlng, lat, nlat)
 
         est_heading = get_est_heading(nlng, nlat, plng, plat)
@@ -303,11 +297,14 @@ class Pipeline:
         if biggest["fn"]:
             self.__save_log_biggest(biggest)
             overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
+            if overlap == 0:
+                good_image = True
+            else:
+                good_image = False
 
             # If picture is good
-            if overlap == 0:
-                self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
-                self.__save_log_plt(biggest["fn"])
+            if good_image:
+                self.__save_final(biggest["fn"], biggest["orig_img"])
                 return
 
         # Second move
@@ -334,9 +331,7 @@ class Pipeline:
         est_heading = -est_heading + 90
         self.__draw_fov(clng, clat, est_heading, color="tab:cyan")
 
-        self.__save_log_img(new_pic[0]["fn"], new_pic[0]["img"], step_n="F")
-
-        self.__save_log_plt(new_pic[0]["fn"])
+        self.__save_final(new_pic[0]["fn"], new_pic[0]["img"])
 
     def run_DCam(self, pid, batch):
         plat, plng = self.lder.fetch_latlng(pid)
