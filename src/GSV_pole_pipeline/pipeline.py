@@ -115,6 +115,19 @@ class Pipeline:
             heading = -int(b["fn"].split("_")[3]) + 90
             self.__draw_fov(lng, lat, heading, color="tab:blue")
 
+    def __draw_move_arrow(self, lng, nlng, lat, nlat):
+        self.ax.plot([lng, nlng], [lat, nlat], "tab:orange")
+        # TODO: turn into method
+        ang1 = -get_est_heading(lng, lat, nlng, nlat) - 90
+        print(f"ANGLE: {ang1}")
+        ang2 = ang1 + 25
+        ang3 = ang1 - 25
+        a1lng, a1lat = get_end_coords(nlng, nlat, ang2, 0.00002)
+        self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
+        a1lng, a1lat = get_end_coords(nlng, nlat, ang3, 0.00002)
+        self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
+        # self.__draw_cross(nlng, nlat, "tab:orange")
+
     def __draw_obj_span(
         self, lng, lat, heading, edges, fov=None, color="tab:red", view_len=0.0003
     ):
@@ -253,17 +266,18 @@ class Pipeline:
         self.curr_step = 3
         nlng, nlat = self.GSV_move(lng, lat, heading)
 
-        self.ax.plot([lng, nlng], [lat, nlat], "tab:orange")
-        # TODO: turn into method
-        ang1 = -get_est_heading(lng, lat, nlng, nlat) - 90
-        print(f"ANGLE: {ang1}")
-        ang2 = ang1 + 25
-        ang3 = ang1 - 25
-        a1lng, a1lat = get_end_coords(nlng, nlat, ang2, 0.00002)
-        self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
-        a1lng, a1lat = get_end_coords(nlng, nlat, ang3, 0.00002)
-        self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
-        # self.__draw_cross(nlng, nlat, "tab:orange")
+        # self.ax.plot([lng, nlng], [lat, nlat], "tab:orange")
+        # # TODO: turn into method
+        # ang1 = -get_est_heading(lng, lat, nlng, nlat) - 90
+        # print(f"ANGLE: {ang1}")
+        # ang2 = ang1 + 25
+        # ang3 = ang1 - 25
+        # a1lng, a1lat = get_end_coords(nlng, nlat, ang2, 0.00002)
+        # self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
+        # a1lng, a1lat = get_end_coords(nlng, nlat, ang3, 0.00002)
+        # self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
+        # # self.__draw_cross(nlng, nlat, "tab:orange")
+        self.__draw_move_arrow(lng, nlng, lat, nlat)
 
         est_heading = get_est_heading(nlng, nlat, plng, plat)
 
