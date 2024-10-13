@@ -33,11 +33,12 @@ def show_masks_indiv(preds, rules):
 
 
 class Pipeline:
-    def __init__(self, loader, predictor, rules={}, log_fp=None):
+    def __init__(self, loader, predictor, decision="area", rules={}, log_fp=None):
         self.lder = loader
         self.pder = predictor
         self.rls = rules
         self.log_fp = log_fp
+        self.decision = decision
         self.curr_step = 0
 
         if self.log_fp:
@@ -197,6 +198,19 @@ class Pipeline:
                 self.__save_log_img(p["fn"], p["orig_img"], post_str="_no_masks.png")
 
         return biggest
+    
+    def move_decision(self, biggest):
+        if self.decision() == "area":
+            return self.area_decision(biggest)
+        if self.decision() == "classifier":
+            return False
+
+    def area_decision(self, biggest):
+        overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
+        if overlap == 0:
+            return True
+        else:
+            return False
 
     def GSV_move(
         self, lng, lat, heading, strat="orthor", mid_point=0, img_w=640, repo_len=0.0001
@@ -257,12 +271,7 @@ class Pipeline:
 
         self.__find_draw_obj(biggest["interest"], lng, lat, heading)
 
-        overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
-        if overlap == 0:
-            good_image = True
-        else:
-            good_image = False
-        # If picture is good
+        good_image = self.move_decision(biggest)
         if good_image:
             self.__save_final(biggest["fn"], biggest["orig_img"])
             return
@@ -296,13 +305,7 @@ class Pipeline:
         self.curr_step = 5
         if biggest["fn"]:
             self.__save_log_biggest(biggest)
-            overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
-            if overlap == 0:
-                good_image = True
-            else:
-                good_image = False
-
-            # If picture is good
+            good_image = self.move_decision(biggest)
             if good_image:
                 self.__save_final(biggest["fn"], biggest["orig_img"])
                 return
