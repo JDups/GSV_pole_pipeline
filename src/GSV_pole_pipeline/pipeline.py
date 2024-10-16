@@ -179,6 +179,7 @@ class Pipeline:
         for p in preds:
             occl = np.zeros(p["orig_img"].shape[:2], dtype=bool)
 
+            intrst_cnt = 0
             for mcntr, (clss, m) in enumerate(zip(p["out"]["class"], p["out"]["mask"])):
                 self.__save_log_img(
                     p["fn"],
@@ -197,8 +198,10 @@ class Pipeline:
                             "occluding": None,
                             "orig_img": p["orig_img"],
                         }
-                    if p["full"]["v_masks"]:
-                        biggest["v_mask"] = p["full"]["v_masks"][mcntr]
+                    for full in p["full"]:
+                        if "p2g" in full:
+                            biggest["v_mask"] = p["full"]["v_masks"][intrst_cnt]
+                    intrst_cnt += 1
 
             if biggest["fn"] == p["fn"]:
                 biggest["occluding"] = occl
