@@ -197,8 +197,8 @@ class Pipeline:
                             "occluding": None,
                             "orig_img": p["orig_img"],
                         }
-                    if p["result"]["v_masks"]:
-                        biggest["v_mask"] = p["result"]["v_masks"][mcntr]
+                    if p["full"]["v_masks"]:
+                        biggest["v_mask"] = p["full"]["v_masks"][mcntr]
 
             if biggest["fn"] == p["fn"]:
                 biggest["occluding"] = occl
