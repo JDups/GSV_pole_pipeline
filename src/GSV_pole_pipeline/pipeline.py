@@ -200,7 +200,7 @@ class Pipeline:
                         }
                     for full in p["full"]:
                         if "p2g" in full:
-                            biggest["v_mask"] = p["full"]["v_masks"][intrst_cnt]
+                            biggest["v_mask"] = full["p2g"]["v_masks"][intrst_cnt]
                     intrst_cnt += 1
 
             if biggest["fn"] == p["fn"]:
@@ -263,7 +263,7 @@ class Pipeline:
             "area_diff": area_diff, "area_ratio": area_ratio,
             "v_ar": v_ar, "p_ar": p_ar, "ar_ratio": ar_ratio,
             "v_height": v_height, "v_width": v_width, "p_height": p_height, "p_width": p_width
-            })
+            }, index=[0])
     
     def bbox2(self, img):
         if np.count_nonzero(img) == 0:
