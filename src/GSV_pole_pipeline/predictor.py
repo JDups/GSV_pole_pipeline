@@ -456,6 +456,7 @@ class Pix2GestaltPredictor(Predictor):
                         "amodal_masks": amodal_masks,
                         "resized_masks": resized_masks,
                         "outs": all_outs,
+                        "v_masks": v_mask_list,
                         },
                 }
             )

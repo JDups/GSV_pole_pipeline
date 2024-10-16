@@ -3,6 +3,8 @@ from utils import show_mask, get_overlay, get_end_coords, get_est_heading
 import matplotlib.pyplot as plt
 import os
 import cv2
+import pickle
+import pandas as pd
 
 """
 TODO: Fix doubling .png in filename for masks
@@ -33,7 +35,7 @@ def show_masks_indiv(preds, rules):
 
 
 class Pipeline:
-    def __init__(self, loader, predictor, decision="area", rules={}, log_fp=None):
+    def __init__(self, loader, predictor, decision="area", rules={}, log_fp=None, clf_fp=None):
         self.lder = loader
         self.pder = predictor
         self.rls = rules
@@ -48,6 +50,10 @@ class Pipeline:
             self.ax.get_xaxis().set_visible(False)
             self.ax.get_yaxis().set_visible(False)
             plt.axis("equal")
+
+        if clf_fp:
+            with open(clf_fp, "rb") as f:
+                self.clf = pickle.load(f)
 
     def __save_fn(self, fn, step_n, post_str=""):
         return (
@@ -121,16 +127,17 @@ class Pipeline:
             self.__draw_fov(lng, lat, heading, color="tab:blue")
 
     def __draw_move_arrow(self, lng, nlng, lat, nlat):
-        self.ax.plot([lng, nlng], [lat, nlat], "tab:orange")
-        ang1 = -get_est_heading(lng, lat, nlng, nlat) - 90
-        print(f"ANGLE: {ang1}")
-        ang2 = ang1 + 25
-        ang3 = ang1 - 25
-        a1lng, a1lat = get_end_coords(nlng, nlat, ang2, 0.00002)
-        self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
-        a1lng, a1lat = get_end_coords(nlng, nlat, ang3, 0.00002)
-        self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
-        # self.__draw_cross(nlng, nlat, "tab:orange")
+        if self.log_fp:
+            self.ax.plot([lng, nlng], [lat, nlat], "tab:orange")
+            ang1 = -get_est_heading(lng, lat, nlng, nlat) - 90
+            print(f"ANGLE: {ang1}")
+            ang2 = ang1 + 25
+            ang3 = ang1 - 25
+            a1lng, a1lat = get_end_coords(nlng, nlat, ang2, 0.00002)
+            self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
+            a1lng, a1lat = get_end_coords(nlng, nlat, ang3, 0.00002)
+            self.ax.plot([nlng, a1lng], [nlat, a1lat], "tab:orange")
+            # self.__draw_cross(nlng, nlat, "tab:orange")
 
     def __draw_obj_span(
         self, lng, lat, heading, edges, fov=None, color="tab:red", view_len=0.0003
@@ -190,6 +197,8 @@ class Pipeline:
                             "occluding": None,
                             "orig_img": p["orig_img"],
                         }
+                    if p["result"]["v_masks"]:
+                        biggest["v_mask"] = p["result"]["v_masks"][mcntr]
 
             if biggest["fn"] == p["fn"]:
                 biggest["occluding"] = occl
@@ -203,7 +212,7 @@ class Pipeline:
         if self.decision == "area":
             return self.area_decision(biggest)
         if self.decision == "classifier":
-            return False
+            return self.classifier_decision(biggest)
 
     def area_decision(self, biggest):
         overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
@@ -211,6 +220,60 @@ class Pipeline:
             return True
         else:
             return False
+        
+    def classifier_decision(self, biggest):
+        mask_features = self.get_mask_features(biggest["v_mask"], biggest["interest"])
+
+        clf_pred = self.clf.predict(mask_features)
+
+        if clf_pred == "clear":
+            return True
+        else:
+            return False
+
+    def get_mask_features(self, v_mask, pred_mask):
+
+        v_mask_area = np.count_nonzero(v_mask)
+        pred_mask_area = np.count_nonzero(pred_mask)
+
+        vx1, vy1, vx2, vy2 = self.bbox2(v_mask)
+        px1, py1, px2, py2 = self.bbox2(pred_mask)
+
+        v_height = vy2 - vy1
+        v_width = vx2 - vx1
+        p_height = py2 - py1
+        p_width = px2 - px1
+
+        area_diff = pred_mask_area - v_mask_area
+        if v_mask_area == 0:
+            area_ratio = pred_mask_area/1
+        else:
+            area_ratio = pred_mask_area/v_mask_area
+
+        v_ar = (v_width + 1) / (v_height + 1)
+        p_ar = (p_width + 1) / (p_height + 1)
+        ar_ratio = p_ar / v_ar
+
+        
+        return pd.DataFrame({
+            "v_mask_area": v_mask_area, "pred_mask_area": pred_mask_area,
+            "area_diff": area_diff, "area_ratio": area_ratio,
+            "v_ar": v_ar, "p_ar": p_ar, "ar_ratio": ar_ratio,
+            "v_height": v_height, "v_width": v_width, "p_height": p_height, "p_width": p_width
+            })
+    
+    def bbox2(self, img):
+        if np.count_nonzero(img) == 0:
+            return 0, 0, 0, 0
+        
+        # https://stackoverflow.com/a/31402351
+        rows = np.any(img, axis=1)
+        cols = np.any(img, axis=0)
+        rmin, rmax = np.where(rows)[0][[0, -1]]
+        cmin, cmax = np.where(cols)[0][[0, -1]]
+
+        # return rmin, rmax, cmin, cmax
+        return rmin, cmin, rmax, cmax # changed to xyxy format
 
     def GSV_move(
         self, lng, lat, heading, strat="orthor", mid_point=0, img_w=640, repo_len=0.0001
@@ -384,8 +447,7 @@ class Pipeline:
         self.__find_draw_obj(biggest["interest"], lng, lat, heading)
 
         if overlap == 0:
-            self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
-            self.__save_log_plt(biggest["fn"])
+            self.__save_final(biggest["fn"], biggest["orig_img"])
             return
 
         track, curr = batch[0]["metadata"]["entry"][["Filename", "Point"]].values[0]
