@@ -212,6 +212,7 @@ class Pipeline:
         return biggest
     
     def move_decision(self, biggest):
+        # return True if image is good and there is no more moves needed
         if self.decision == "area":
             return self.area_decision(biggest)
         if self.decision == "classifier":
@@ -228,6 +229,7 @@ class Pipeline:
         mask_features = self.get_mask_features(biggest["v_mask"], biggest["interest"])
 
         clf_pred = self.clf.predict(mask_features)
+        print(clf_pred)
 
         if clf_pred == "clear":
             return True
