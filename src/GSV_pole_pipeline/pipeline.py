@@ -231,7 +231,7 @@ class Pipeline:
         clf_pred = self.clf.predict(mask_features)
         print(clf_pred)
 
-        if clf_pred == "clear":
+        if clf_pred == "Clear":
             return True
         else:
             return False
