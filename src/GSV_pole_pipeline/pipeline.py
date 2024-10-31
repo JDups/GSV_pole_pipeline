@@ -201,6 +201,7 @@ class Pipeline:
                     for full in p["full"]:
                         if "p2g" in full:
                             biggest["v_mask"] = full["p2g"]["v_masks"][intrst_cnt]
+                            biggest["amodal_masks"] = full["p2g"]["amodal_masks"][intrst_cnt]
                     intrst_cnt += 1
 
             if biggest["fn"] == p["fn"]:
@@ -226,7 +227,7 @@ class Pipeline:
             return False
         
     def classifier_decision(self, biggest):
-        mask_features = self.get_mask_features(biggest["v_mask"], biggest["interest"])
+        mask_features = self.get_mask_features(biggest["v_mask"], biggest["amodal_masks"])
 
         clf_pred = self.clf.predict(mask_features)
         print(clf_pred)

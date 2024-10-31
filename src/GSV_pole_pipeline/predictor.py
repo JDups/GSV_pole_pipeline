@@ -395,13 +395,15 @@ class Pix2GestaltPredictor(Predictor):
                 class_list = [class_list[i] for i in target_idx]
 
             pred_mask = []
+            v_mask_list = [
+                cv2.resize((m * 255).astype(np.uint8), (256, 256), interpolation=cv2.INTER_NEAREST)
+                for m in v_mask_list
+            ]
             for v_mask in v_mask_list:
                 print(v_mask)
                 outs = inference.run_inference(
                     input_image=cv2.resize(im["img"], (256, 256)),
-                    visible_mask=cv2.resize(
-                        (v_mask * 255).astype(np.uint8), (256, 256), interpolation=cv2.INTER_NEAREST
-                    ),
+                    visible_mask=v_mask,
                     model=self.p2g,
                     guidance_scale=self.guidance_scale,
                     n_samples=self.n_samples,
