@@ -35,7 +35,7 @@ def show_masks_indiv(preds, rules):
 
 
 class Pipeline:
-    def __init__(self, loader, predictor, decision="overlap", rules={}, log_fp=None, clf_fp=None):
+    def __init__(self, loader, predictor, decision=None, rules={}, log_fp=None, clf_fp=None):
         self.lder = loader
         self.pder = predictor
         self.rls = rules
@@ -216,8 +216,16 @@ class Pipeline:
         # return True if image is good and there is no more moves needed
         if self.decision == "overlap":
             return self.overlap_decision(biggest)
-        if self.decision == "classifier":
+        elif self.decision == "classifier":
             return self.classifier_decision(biggest)
+        else:
+            if self.clf:
+                if self.classifier_decision(biggest):
+                    return True
+            if "occluding" in self.rls:
+                if self.overlap_decision(biggest):
+                    return True
+            return False
 
     def overlap_decision(self, biggest):
         overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
