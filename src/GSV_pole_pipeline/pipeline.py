@@ -449,7 +449,6 @@ class Pipeline:
         self.__save_log_biggest(biggest)
 
         # print(f"File: {largest['fn']}")
-        overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
 
         # Turns gsv heading into angle from horizontal
         # 0->90, 90->0, 180->-90, 270->-180, 360->-270
@@ -460,7 +459,8 @@ class Pipeline:
 
         self.__find_draw_obj(biggest["interest"], lng, lat, heading)
 
-        if overlap == 0:
+        good_image = self.move_decision(biggest)
+        if good_image:
             self.__save_final(biggest["fn"], biggest["orig_img"])
             return
 
@@ -488,7 +488,6 @@ class Pipeline:
             self.__save_log_biggest(biggest)
 
             # print(f"File: {largest['fn']}")
-            overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
 
             # Turns gsv heading into angle from horizontal
             # 0->90, 90->0, 180->-90, 270->-180, 360->-270
@@ -498,7 +497,8 @@ class Pipeline:
             self.__draw_fov(clng, clat, heading, color="tab:cyan")
             self.__find_draw_obj(biggest["interest"], clng, clat, heading)
 
-            if overlap == 0:
+            good_image = self.move_decision(biggest)
+            if good_image:
                 self.__save_log_img(biggest["fn"], biggest["orig_img"], step_n="F")
                 break
 
