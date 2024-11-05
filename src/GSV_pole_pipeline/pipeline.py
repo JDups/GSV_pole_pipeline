@@ -220,12 +220,12 @@ class Pipeline:
             return self.classifier_decision(biggest)
         else:
             if self.clf:
-                if self.classifier_decision(biggest):
-                    return True
+                if not self.classifier_decision(biggest):
+                    return False
             if "occluding" in self.rls:
-                if self.overlap_decision(biggest):
-                    return True
-            return False
+                if not self.overlap_decision(biggest):
+                    return False
+            return True
 
     def overlap_decision(self, biggest):
         overlap = np.logical_and(biggest["interest"], biggest["occluding"]).sum()
