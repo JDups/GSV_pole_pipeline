@@ -292,7 +292,7 @@ class DCamFetch(Loader):
         df["img_path"] = (
             pics_folder
             + df["Filename"].str.split(".").str[0]
-            + "\\frame"
+            + f"{os.sep}frame"
             + df["Point"].astype(str)
             + ".jpg"
         )
