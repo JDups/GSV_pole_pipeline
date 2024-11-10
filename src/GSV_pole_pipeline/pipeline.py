@@ -190,7 +190,7 @@ class Pipeline:
                 if clss in self.rls["occluding"]:
                     occl = np.logical_or(occl, m)
 
-                if clss in self.rls["interest"]:
+                if clss in self.rls["interest"] and m.sum() > 0:
                     if biggest["fn"] is None or m.sum() > biggest["interest"].sum():
                         biggest = {
                             "fn": p["fn"],
