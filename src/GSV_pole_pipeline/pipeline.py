@@ -36,13 +36,14 @@ def show_masks_indiv(preds, rules):
 
 
 class Pipeline:
-    def __init__(self, loader, predictor, decision=None, rules={}, log_fp=None, clf_fp=None):
+    def __init__(self, loader, predictor, decision=None, rules={}, log_fp=None, clf_fp=None, save_decision=True):
         self.lder = loader
         self.pder = predictor
         self.rls = rules
         self.log_fp = log_fp
         self.decision = decision
         self.curr_step = 0
+        self.save_decision = save_decision
 
         if self.log_fp:
             os.makedirs(self.log_fp, exist_ok=True)
@@ -420,7 +421,7 @@ class Pipeline:
 
         self.__save_final(new_pic[0]["fn"], new_pic[0]["img"])
 
-        if self.decision == "classifier":
+        if self.save_decision:
             preds = self.pder.predict(new_pic)
             biggest = self.find_biggest(preds)
             if biggest["fn"]:
