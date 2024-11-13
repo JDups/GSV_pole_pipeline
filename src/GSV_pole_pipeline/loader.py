@@ -29,8 +29,9 @@ class Loader(ABC):
         self.data_df = pd.read_csv(csv_file)
 
         if obj_ids:
-            if not obj_ids in self.data_df[self.id_col].values:
-                raise ValueError("ID not found in CSV")
+            for id in obj_ids:
+                if not id in self.data_df[self.id_col].values:
+                    raise ValueError(f"ID {id} not found in CSV")
             self.obj_ids = np.array(obj_ids)
         else:
             self.obj_ids = self.data_df[self.id_col].unique()
