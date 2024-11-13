@@ -12,6 +12,7 @@ TODO: Fix plotting in jupyter notebooks
 TODO: Add plotting for when no detection of interest is made
 TODO: Loader and pipeline should be merged into same objects.
       The pipeline logic ends up depending on the loader anyways.
+TODO: Move "if step_n is None" from __save_log_img to __save_fn
 """
 
 
@@ -234,7 +235,7 @@ class Pipeline:
         else:
             return False
         
-    def classifier_decision(self, biggest, log_dcs):
+    def classifier_decision(self, biggest, log_dcs=False):
         mask_features = self.get_mask_features(biggest["v_mask"], biggest["amodal_masks"])
 
         clf_pred = self.clf.predict(mask_features)
