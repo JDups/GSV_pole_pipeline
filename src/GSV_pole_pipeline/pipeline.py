@@ -234,11 +234,17 @@ class Pipeline:
         else:
             return False
         
-    def classifier_decision(self, biggest):
+    def classifier_decision(self, biggest, log_dcs):
         mask_features = self.get_mask_features(biggest["v_mask"], biggest["amodal_masks"])
 
         clf_pred = self.clf.predict(mask_features)
         print(clf_pred)
+
+        if log_dcs:
+            fn = self.__save_fn(fn, self.curr_step, "end_state")
+            fn = fn.split(".")[0] + ".txt"
+            with open(fn, "w") as f:
+                f.write(clf_pred)
 
         if clf_pred == "Clear":
             return True
@@ -412,6 +418,17 @@ class Pipeline:
         self.__draw_fov(clng, clat, est_heading, color="tab:cyan")
 
         self.__save_final(new_pic[0]["fn"], new_pic[0]["img"])
+
+        if self.decision == "classifier":
+            preds = self.pder.predict(new_pic)
+            biggest = self.find_biggest(preds)
+            if biggest["fn"]:
+                _ = self.classifier_decision(biggest, True)
+            else:
+                fn = self.__save_fn(fn, self.curr_step, "end_state")
+                fn = fn.split(".")[0] + ".txt"
+                with open(fn, "w") as f:
+                    f.write("No pole found")
 
     def run_DCam(self, pid, batch):
         plat, plng = self.lder.fetch_latlng(pid)
