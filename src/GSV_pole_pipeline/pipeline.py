@@ -243,7 +243,7 @@ class Pipeline:
         print(clf_pred)
 
         if log_dcs:
-            fn = self.__save_fn(fn, self.curr_step, "end_state")
+            fn = self.__save_fn(biggest["fn"], self.curr_step, "end_state")
             fn = fn.split(".png")[0] + ".txt"
             with open(fn, "w") as f:
                 f.write(clf_pred)
@@ -427,7 +427,7 @@ class Pipeline:
             if biggest["fn"]:
                 _ = self.classifier_decision(biggest, True)
             else:
-                fn = self.__save_fn(fn, self.curr_step, "end_state")
+                fn = self.__save_fn(batch[0]["fn"], self.curr_step, "end_state")
                 fn = fn.split(".png")[0] + ".txt"
                 with open(fn, "w") as f:
                     f.write("No pole found")
