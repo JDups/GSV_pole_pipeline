@@ -246,7 +246,7 @@ class Pipeline:
             fn = self.__save_fn(biggest["fn"], self.curr_step, "end_state")
             fn = fn.split(".png")[0] + ".txt"
             with open(fn, "w") as f:
-                f.write(clf_pred)
+                f.write(str(clf_pred))
 
         if clf_pred == "Clear":
             return True
